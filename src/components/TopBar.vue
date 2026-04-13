@@ -5,7 +5,13 @@
 
       <div class="topbar-legend">
         <div v-for="item in legend" :key="item.label" class="legend-item">
-          <span class="legend-dot" :class="item.status"></span>
+          <span class="legend-node" :class="item.status">
+            <span v-if="item.status === 'pass'" class="legend-icon">✓</span>
+            <span v-else-if="item.status === 'fail'" class="legend-icon">✕</span>
+            <span v-else-if="item.status === 'rejected'" class="legend-icon rejected">−</span>
+            <span v-else-if="item.status === 'skip'" class="legend-icon skip">―</span>
+            <span v-else-if="item.status === 'current'" class="legend-pulse"></span>
+          </span>
           <span class="legend-label">{{ item.label }}</span>
         </div>
       </div>
@@ -70,44 +76,70 @@ const legend = [
 .legend-item {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 12px;
   color: var(--color-text-secondary);
   font-weight: 400;
 }
 
-.legend-dot {
-  width: 8px;
-  height: 8px;
+.legend-node {
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.legend-dot.pending {
-  border: 1.5px dashed var(--color-pending-border);
-  background: transparent;
+.legend-node.pending {
+  border: 2px dashed var(--color-pending-border);
+  background: var(--color-surface-solid);
 }
 
-.legend-dot.current {
+.legend-node.current {
   background: var(--color-accent);
+  animation: pulse-ring 2s infinite;
 }
 
-.legend-dot.pass {
+.legend-pulse {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.legend-node.pass {
   background: var(--color-success);
 }
 
-.legend-dot.fail {
+.legend-node.fail {
   background: var(--color-danger);
 }
 
-.legend-dot.rejected {
-  border: 1.5px solid var(--color-danger);
-  background: transparent;
+.legend-node.rejected {
+  border: 2px solid var(--color-danger);
+  background: var(--color-surface-solid);
 }
 
-.legend-dot.skip {
-  border: 1.5px solid var(--color-gray);
-  background: transparent;
+.legend-node.skip {
+  border: 2px solid var(--color-gray);
+  background: var(--color-surface-solid);
+}
+
+.legend-icon {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.legend-icon.rejected {
+  color: var(--color-danger);
+}
+
+.legend-icon.skip {
+  color: var(--color-gray);
 }
 
 .topbar-add {

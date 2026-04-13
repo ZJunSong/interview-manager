@@ -15,7 +15,7 @@
         :stage="stage"
         :index="i"
         :is-last="i === interview.stages.length - 1"
-        :connector-color="stage.status === 'pass' ? 'var(--color-connector-pass)' : 'var(--color-connector)'"
+        :connector-color="(stage.status === 'pass' || stage.status === 'skip') ? 'var(--color-connector-pass)' : 'var(--color-connector)'"
         @click="(idx, el) => $emit('stageClick', interview.id, idx, el)"
       />
     </div>
@@ -43,7 +43,7 @@ defineEmits<{
   backdrop-filter: var(--backdrop-blur);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
-  padding: var(--space-lg) var(--space-xl);
+  padding: var(--space-xl) var(--space-2xl);
   animation: slide-up var(--duration-slow) var(--ease-out) both;
   transition: box-shadow var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out);
 }
@@ -101,12 +101,11 @@ defineEmits<{
   display: flex;
   align-items: center;
   padding: 0 var(--space-sm);
-  padding-bottom: var(--space-md);
+  padding-bottom: var(--space-2xl);
   overflow-x: auto;
   gap: 0;
 }
 
-/* Give each node extra bottom padding for labels */
 .card-timeline > :deep(.timeline-node) {
   padding-bottom: var(--space-sm);
 }

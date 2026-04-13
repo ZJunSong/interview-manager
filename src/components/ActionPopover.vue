@@ -48,11 +48,12 @@ const placement = computed(() => {
 const pos = computed(() => {
   if (!props.rect) return { top: 0, left: 0 };
   const popoverWidth = 160;
+  const popoverHeight = 180;
   const offset = 12;
   const left = props.rect.left + props.rect.width / 2 - popoverWidth / 2;
 
   if (props.rect.top > 200) {
-    return { top: props.rect.top - offset - 8, left };
+    return { top: props.rect.top - offset, left };
   }
   return { top: props.rect.bottom + offset, left };
 });
@@ -77,7 +78,7 @@ const pos = computed(() => {
 }
 
 .popover.above {
-  transform: translateY(-100%);
+  /* Position is already calculated in JS, no transform needed */
 }
 
 .popover-arrow {
@@ -93,6 +94,8 @@ const pos = computed(() => {
   bottom: -6px;
   left: 50%;
   margin-left: -6px;
+  transform: rotate(45deg);
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .popover.below .popover-arrow {

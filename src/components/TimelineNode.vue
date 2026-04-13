@@ -11,9 +11,8 @@
       <span v-else-if="stage.status === 'rejected'" class="node-icon">−</span>
       <span v-else-if="stage.status === 'skip'" class="node-icon">―</span>
       <span v-else-if="stage.status === 'current'" class="node-pulse"></span>
+      <span class="node-label">{{ stage.name }}</span>
     </div>
-
-    <span class="node-label">{{ stage.name }}</span>
 
     <div
       v-if="!isLast"
@@ -52,12 +51,11 @@ function handleClick() {
   display: flex;
   align-items: center;
   flex-shrink: 0;
-  position: relative;
 }
 
 .node-circle {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -88,8 +86,8 @@ function handleClick() {
 }
 
 .node-pulse {
-  width: 7px;
-  height: 7px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
   background: #fff;
 }
@@ -128,7 +126,7 @@ function handleClick() {
 
 .node-icon {
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 700;
   line-height: 1;
 }
@@ -145,7 +143,7 @@ function handleClick() {
 }
 
 .node-connector {
-  width: 40px;
+  width: 72px;
   height: 2px;
   flex-shrink: 0;
   border-radius: 1px;
