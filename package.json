@@ -1,10 +1,26 @@
 {
   "name": "interview-manager",
-  "private": true,
+  "version": "1.0.0",
+  "description": "A lightweight job interview progress tracker with timeline visualization",
+  "private": false,
+  "license": "MIT",
+  "keywords": [
+    "interview",
+    "job-search",
+    "tracker",
+    "vue3",
+    "express",
+    "typescript"
+  ],
   "scripts": {
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev": "node dev.cjs",
     "dev:server": "ts-node-dev --respawn --transpile-only server/index.ts",
-    "dev:client": "vite"
+    "dev:client": "vite",
+    "build": "npm run build:client && npm run build:server",
+    "build:client": "vite build",
+    "build:server": "tsc -p tsconfig.server.json",
+    "start": "cross-env NODE_ENV=production node dist/server/index.js",
+    "preview": "npm run build && npm run start"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -17,7 +33,7 @@
     "@types/node": "^22.0.0",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-vue": "^5.2.0",
-    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.0",
