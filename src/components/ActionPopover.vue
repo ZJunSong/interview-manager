@@ -42,17 +42,28 @@ defineEmits<{
 
 const placement = computed(() => {
   if (!props.rect) return 'below';
-  return props.rect.top > 200 ? 'above' : 'below';
+  // 上方空间不足时放下方，下方空间不足时放上方
+  const spaceAbove = props.rect.top;
+  const spaceBelow = window.innerHeight - props.rect.bottom;
+  if (spaceAbove > 200 && spaceAbove >= spaceBelow) return 'above';
+  if (spaceBelow > 200) return 'below';
+  return spaceAbove > spaceBelow ? 'above' : 'below';
 });
 
 const pos = computed(() => {
   if (!props.rect) return { top: 0, left: 0 };
   const popoverWidth = 160;
-  const popoverHeight = 180;
   const offset = 12;
-  const left = props.rect.left + props.rect.width / 2 - popoverWidth / 2;
+  const padding = 8;
 
-  if (props.rect.top > 200) {
+  let left = props.rect.left + props.rect.width / 2 - popoverWidth / 2;
+  // 水平方向限制在视口内
+  left = Math.max(padding, Math.min(left, window.innerWidth - popoverWidth - padding));
+
+  const spaceAbove = props.rect.top;
+  const spaceBelow = window.innerHeight - props.rect.bottom;
+  // 优先放上方，除非上方空间明显不足
+  if (spaceAbove > 200 && spaceAbove >= spaceBelow) {
     return { top: props.rect.top - offset, left };
   }
   return { top: props.rect.bottom + offset, left };

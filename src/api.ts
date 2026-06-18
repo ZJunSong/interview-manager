@@ -35,3 +35,21 @@ export function updateStage(id: string, stageIndex: number, status: string): Pro
 export function deleteInterview(id: string): Promise<void> {
   return request<void>(`${BASE}/${id}`, { method: 'DELETE' });
 }
+
+export function updateInterview(id: string, company: string, position: string): Promise<Interview> {
+  return request<Interview>(`${BASE}/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ company, position })
+  });
+}
+
+export function exportInterviews(): Promise<Interview[]> {
+  return request<Interview[]>(`${BASE}/export`);
+}
+
+export function importInterviews(data: Interview[]): Promise<{ success: boolean; count: number }> {
+  return request<{ success: boolean; count: number }>(`${BASE}/import`, {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}

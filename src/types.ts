@@ -18,6 +18,7 @@ export interface Interview {
   position: string;
   stages: Stage[];
   createdAt: string;
+  updatedAt: string;
 }
 
 export type ToastType = 'success' | 'error';

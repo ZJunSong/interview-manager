@@ -18,4 +18,5 @@ export interface Interview {
   position: string;
   stages: Stage[];
   createdAt: string;
+  updatedAt: string;
 }

@@ -4,8 +4,12 @@
       <div class="card-info">
         <h2 class="card-company">{{ interview.company }}</h2>
         <span class="card-position">{{ interview.position }}</span>
+        <span class="card-date" :title="'创建: ' + formatDate(interview.createdAt)">{{ formatDate(interview.updatedAt || interview.createdAt) }}{{ interview.updatedAt !== interview.createdAt ? ' (已编辑)' : '' }}</span>
       </div>
-      <button class="card-delete" @click="$emit('delete', interview.id)">删除</button>
+      <div class="card-actions">
+        <button class="card-edit" @click="$emit('edit', interview.id)">编辑</button>
+        <button class="card-delete" @click="$emit('delete', interview.id)">删除</button>
+      </div>
     </div>
 
     <div class="card-timeline">
@@ -15,7 +19,7 @@
         :stage="stage"
         :index="i"
         :is-last="i === interview.stages.length - 1"
-        :connector-color="(stage.status === 'pass' || stage.status === 'skip') ? 'var(--color-connector-pass)' : 'var(--color-connector)'"
+        :connector-color="stage.status === 'pass' ? 'var(--color-connector-pass)' : stage.status === 'skip' ? 'var(--color-gray)' : 'var(--color-connector)'"
         @click="(idx, el) => $emit('stageClick', interview.id, idx, el)"
       />
     </div>
@@ -34,7 +38,16 @@ defineProps<{
 defineEmits<{
   stageClick: [interviewId: string, stageIndex: number, el: HTMLElement];
   delete: [interviewId: string];
+  edit: [interviewId: string];
 }>();
+
+function formatDate(iso: string): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const m = d.getMonth() + 1;
+  const day = d.getDate();
+  return `${m}月${day}日`;
+}
 </script>
 
 <style scoped>
@@ -81,6 +94,32 @@ defineEmits<{
   padding: 2px 10px;
   border-radius: var(--radius-full);
   letter-spacing: 0.01em;
+}
+
+.card-date {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.card-edit {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--ease-out);
+  font-weight: 400;
+}
+
+.card-edit:hover {
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
 }
 
 .card-delete {
