@@ -15,7 +15,7 @@
       <span v-else-if="stage.status === 'rejected'" class="node-icon">−</span>
       <span v-else-if="stage.status === 'skip'" class="node-icon">―</span>
       <span v-else-if="stage.status === 'current'" class="node-pulse"></span>
-      <span class="node-label">{{ stage.name }}</span>
+      <span class="node-label" :class="stage.status">{{ stage.name }}</span>
     </div>
 
     <div
@@ -66,15 +66,16 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .node-circle {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: all var(--duration-fast) var(--ease-out);
+  transition: transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
   flex-shrink: 0;
+  z-index: 1;
 }
 
 .interactive .node-circle {
@@ -82,7 +83,8 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .interactive .node-circle:hover {
-  transform: scale(1.12);
+  transform: scale(1.15);
+  box-shadow: 0 0 0 6px var(--color-current-glow);
 }
 
 .interactive .node-circle:focus-visible {
@@ -96,15 +98,16 @@ function onKeydown(e: KeyboardEvent) {
   border: 2px dashed var(--color-pending-border);
 }
 
-/* current */
+/* current — 加外发光环 */
 .node-circle.current {
   background: var(--color-accent);
+  box-shadow: 0 0 0 4px var(--color-accent-soft);
   animation: pulse-ring 2s infinite;
 }
 
 .node-pulse {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
   background: #fff;
 }
@@ -112,11 +115,13 @@ function onKeydown(e: KeyboardEvent) {
 /* pass */
 .node-circle.pass {
   background: var(--color-success);
+  box-shadow: 0 1px 3px rgba(34, 197, 94, 0.3);
 }
 
 /* fail */
 .node-circle.fail {
   background: var(--color-danger);
+  box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
 }
 
 /* rejected */
@@ -127,7 +132,7 @@ function onKeydown(e: KeyboardEvent) {
 
 .node-circle.rejected .node-icon {
   color: var(--color-danger);
-  font-size: 16px;
+  font-size: 18px;
 }
 
 /* skip */
@@ -138,32 +143,50 @@ function onKeydown(e: KeyboardEvent) {
 
 .node-circle.skip .node-icon {
   color: var(--color-gray);
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .node-icon {
   color: #fff;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 700;
   line-height: 1;
 }
 
 .node-label {
   position: absolute;
-  bottom: -22px;
+  bottom: -24px;
   left: 50%;
   transform: translateX(-50%);
   font-size: 11px;
   color: var(--color-text-secondary);
   white-space: nowrap;
   font-weight: 400;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+/* 当前/通过阶段的标签加粗高亮 */
+.node-label.current {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.node-label.pass {
+  color: var(--color-success);
+  font-weight: 500;
+}
+
+.node-label.fail,
+.node-label.rejected {
+  color: var(--color-danger);
 }
 
 .node-connector {
-  width: 72px;
+  width: 64px;
   height: 2px;
   flex-shrink: 0;
   border-radius: 1px;
   transition: background var(--duration-normal) var(--ease-out);
+  margin-left: -1px;
 }
 </style>
