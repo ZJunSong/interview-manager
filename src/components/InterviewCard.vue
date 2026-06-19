@@ -145,9 +145,9 @@ function formatDate(iso: string): string {
 .card-timeline {
   display: flex;
   align-items: center;
-  padding: 0 var(--space-sm);
-  padding-bottom: var(--space-2xl);
+  padding: var(--space-sm) var(--space-sm) var(--space-2xl);
   overflow-x: auto;
+  overflow-y: visible;
   gap: 0;
   scrollbar-width: thin;
   scrollbar-color: var(--color-border-strong) transparent;
