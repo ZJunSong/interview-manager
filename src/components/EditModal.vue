@@ -27,8 +27,8 @@
         </div>
 
         <div class="modal-actions">
-          <button class="btn-cancel" @click="close">取消</button>
-          <button class="btn-submit" @click="submit">保存</button>
+          <button type="button" class="btn-cancel" @click="close">取消</button>
+          <button type="button" class="btn-submit" @click="submit">保存</button>
         </div>
       </div>
     </div>

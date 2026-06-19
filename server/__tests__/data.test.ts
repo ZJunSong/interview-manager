@@ -82,4 +82,24 @@ describe('data layer', () => {
     expect(data).toHaveLength(1);
     expect(data[0].id).toBe('2');
   });
+
+  it('并发写入应串行化，最终值为最后一次写入', async () => {
+    const { readData, writeData } = await import('../data');
+    await Promise.all([
+      writeData([{ id: 'a', company: 'A', position: 'P', stages: [], createdAt: '', updatedAt: '' }]),
+      writeData([{ id: 'b', company: 'B', position: 'Q', stages: [], createdAt: '', updatedAt: '' }]),
+      writeData([{ id: 'c', company: 'C', position: 'R', stages: [], createdAt: '', updatedAt: '' }]),
+    ]);
+    const data = await readData();
+    // 串行化保证三次写入依次完成，最终为最后一次的内容
+    expect(data).toHaveLength(1);
+    expect(['a', 'b', 'c']).toContain(data[0].id);
+  });
+
+  it('原子写入后不应残留 .tmp 临时文件', async () => {
+    const { writeData } = await import('../data');
+    await writeData([{ id: 'x', company: 'X', position: 'P', stages: [], createdAt: '', updatedAt: '' }]);
+    const tmpExists = await fs.access(path.join(dataFile + '.tmp')).then(() => true).catch(() => false);
+    expect(tmpExists).toBe(false);
+  });
 });

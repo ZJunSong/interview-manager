@@ -17,18 +17,37 @@ function getDataPaths() {
   };
 }
 
+// 写入串行化，避免并发请求读-改-写时互相覆盖
+let writeChain: Promise<void> = Promise.resolve();
+function serializeWrite(task: () => Promise<void>): Promise<void> {
+  const next = writeChain.then(task, task);
+  // 错误不应阻塞后续写入任务
+  writeChain = next.catch(() => {});
+  return next;
+}
+
 export async function readData(): Promise<Interview[]> {
   try {
     const { file } = getDataPaths();
     const content = await fs.readFile(file, 'utf-8');
-    return JSON.parse(content) as Interview[];
-  } catch {
+    const parsed = JSON.parse(content);
+    return Array.isArray(parsed) ? (parsed as Interview[]) : [];
+  } catch (err) {
+    // 文件不存在是正常情况（首次运行），静默处理；其他错误记录日志
+    if ((err as NodeJS.ErrnoException).code !== 'ENOENT') {
+      console.error('[data] 读取数据失败:', err);
+    }
     return [];
   }
 }
 
 export async function writeData(interviews: Interview[]): Promise<void> {
-  const { dir, file } = getDataPaths();
-  await fs.mkdir(dir, { recursive: true });
-  await fs.writeFile(file, JSON.stringify(interviews, null, 2), 'utf-8');
+  return serializeWrite(async () => {
+    const { dir, file } = getDataPaths();
+    await fs.mkdir(dir, { recursive: true });
+    // 先写入临时文件再原子替换，防止写入中途崩溃导致数据损坏
+    const tmp = `${file}.tmp`;
+    await fs.writeFile(tmp, JSON.stringify(interviews, null, 2), 'utf-8');
+    await fs.rename(tmp, file);
+  });
 }

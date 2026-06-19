@@ -2,7 +2,7 @@
 /* Aesthetic: Refined Apple-inspired with editorial clarity.
    Warm neutral palette, deliberate spacing, luminous depth. */
 
-@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap');
+/* 字体通过 index.html 的 <link> 预连接加载，避免 CSS @import 阻塞渲染 */
 
 :root {
   /* Typography */
@@ -164,4 +164,14 @@ ul, ol {
 @keyframes toast-out {
   from { opacity: 1; transform: translateX(-50%) translateY(0); }
   to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* ===== 无障碍：尊重用户的动效偏好 ===== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

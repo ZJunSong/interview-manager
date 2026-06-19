@@ -7,8 +7,8 @@
         <span class="card-date" :title="'创建: ' + formatDate(interview.createdAt)">{{ formatDate(interview.updatedAt || interview.createdAt) }}{{ interview.updatedAt !== interview.createdAt ? ' (已编辑)' : '' }}</span>
       </div>
       <div class="card-actions">
-        <button class="card-edit" @click="$emit('edit', interview.id)">编辑</button>
-        <button class="card-delete" @click="$emit('delete', interview.id)">删除</button>
+        <button type="button" class="card-edit" @click="$emit('edit', interview.id)">编辑</button>
+        <button type="button" class="card-delete" @click="$emit('delete', interview.id)">删除</button>
       </div>
     </div>
 

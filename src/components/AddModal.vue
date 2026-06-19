@@ -6,7 +6,7 @@
 
         <div class="modal-field">
           <label class="field-label">公司名称</label>
-          <div class="field-input-wrap">
+          <div ref="companyInputWrap" class="field-input-wrap">
             <input
               ref="companyInput"
               v-model="company"
@@ -31,7 +31,7 @@
 
         <div class="modal-field">
           <label class="field-label">投递职位</label>
-          <div class="field-input-wrap">
+          <div ref="positionInputWrap" class="field-input-wrap">
             <input
               ref="positionInput"
               v-model="position"
@@ -55,8 +55,8 @@
         </div>
 
         <div class="modal-actions">
-          <button class="btn-cancel" @click="close">取消</button>
-          <button class="btn-submit" @click="submit">确认添加</button>
+          <button type="button" class="btn-cancel" @click="close">取消</button>
+          <button type="button" class="btn-submit" @click="submit">确认添加</button>
         </div>
       </div>
     </div>
@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick, watch } from 'vue';
+import { ref, nextTick, watch, onMounted, onUnmounted } from 'vue';
 
 const props = defineProps<{
   visible: boolean;
@@ -89,6 +89,8 @@ const company = ref('');
 const position = ref('');
 const companyInput = ref<HTMLInputElement | null>(null);
 const positionInput = ref<HTMLInputElement | null>(null);
+const companyInputWrap = ref<HTMLElement | null>(null);
+const positionInputWrap = ref<HTMLElement | null>(null);
 const showCompanyDropdown = ref(false);
 const showPositionDropdown = ref(false);
 const companyHighlight = ref(0);
@@ -147,6 +149,7 @@ function onCompanyKeydown(e: KeyboardEvent) {
   } else if (e.key === 'Escape') {
     if (showCompanyDropdown.value) {
       showCompanyDropdown.value = false;
+      e.stopPropagation();
     } else {
       close();
     }
@@ -175,6 +178,7 @@ function onPositionKeydown(e: KeyboardEvent) {
   } else if (e.key === 'Escape') {
     if (showPositionDropdown.value) {
       showPositionDropdown.value = false;
+      e.stopPropagation();
     } else {
       close();
     }
@@ -200,6 +204,25 @@ function reset() {
   filteredCompanies.value = [];
   filteredPositions.value = POSITIONS;
 }
+
+function onDocumentClick(e: MouseEvent) {
+  // 点击下拉建议外部时关闭对应下拉
+  const target = e.target as Node;
+  if (showCompanyDropdown.value && !companyInputWrap.value?.contains(target)) {
+    showCompanyDropdown.value = false;
+  }
+  if (showPositionDropdown.value && !positionInputWrap.value?.contains(target)) {
+    showPositionDropdown.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', onDocumentClick);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('click', onDocumentClick);
+});
 
 watch(() => props.visible, (val) => {
   if (val) {

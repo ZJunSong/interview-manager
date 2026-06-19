@@ -312,6 +312,44 @@ describe('routes logic', () => {
       const final = await readData();
       expect(final).toHaveLength(3);
     });
+
+    it('导入缺失 id 的记录应生成新 id 并登记到去重集合', async () => {
+      const { readData, writeData } = await import('../data');
+      await writeData([]);
+
+      // 模拟导入两条无 id 的记录（结构合法但 id 缺失）
+      const itemA = createMockInterview({ company: '无ID公司A' });
+      delete (itemA as { id?: string }).id;
+      const itemB = createMockInterview({ company: '无ID公司B' });
+      delete (itemB as { id?: string }).id;
+      const toImport = [itemA, itemB];
+
+      const data = await readData();
+      const existingIds = new Set(data.map(i => i.id));
+      const existingCompanies = new Set(data.map(i => `${i.company}|${i.position}`));
+      let count = 0;
+      // 复现修复后的逻辑
+      const { v4: uuidv4 } = await import('uuid');
+      for (const item of toImport) {
+        if (item.id && existingIds.has(item.id)) continue;
+        const key = `${item.company}|${item.position}`;
+        if (existingCompanies.has(key)) continue;
+        const newId = item.id || uuidv4();
+        data.push({ ...item, id: newId });
+        existingIds.add(newId);
+        existingCompanies.add(key);
+        count++;
+      }
+      await writeData(data);
+
+      expect(count).toBe(2);
+      const final = await readData();
+      expect(final).toHaveLength(2);
+      // 两条记录都应拥有非空 id
+      expect(final.every(i => typeof i.id === 'string' && i.id.length > 0)).toBe(true);
+      // 两条 id 互不相同
+      expect(final[0].id).not.toBe(final[1].id);
+    });
   });
 
   describe('导出数据完整性', () => {

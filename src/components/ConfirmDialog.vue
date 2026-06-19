@@ -6,8 +6,8 @@
           确定要删除「<strong>{{ companyName }}</strong>」的面试记录吗？此操作不可撤销。
         </p>
         <div class="modal-actions">
-          <button class="btn-cancel" @click="$emit('cancel')">取消</button>
-          <button class="btn-delete" @click="$emit('confirm')">删除</button>
+          <button type="button" class="btn-cancel" @click="$emit('cancel')">取消</button>
+          <button type="button" class="btn-delete" @click="$emit('confirm')">删除</button>
         </div>
       </div>
     </div>

@@ -9,9 +9,10 @@
           type="text"
           placeholder="搜索公司或职位…"
           :value="searchQuery"
+          aria-label="搜索公司或职位"
           @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
-        <span class="search-icon">⌕</span>
+        <span class="search-icon" aria-hidden="true">⌕</span>
       </div>
 
       <div class="topbar-legend">
@@ -31,7 +32,7 @@
         {{ searchQuery ? `${filteredCount} / ${totalCount}` : totalCount }} 条记录
       </span>
 
-      <select class="topbar-sort" :value="sortBy" @change="$emit('update:sortBy', ($event.target as HTMLSelectElement).value)">
+      <select class="topbar-sort" :value="sortBy" aria-label="排序方式" @change="$emit('update:sortBy', ($event.target as HTMLSelectElement).value)">
         <option value="newest">最新优先</option>
         <option value="oldest">最早优先</option>
         <option value="company">按公司名</option>
@@ -39,7 +40,7 @@
       </select>
 
       <div class="topbar-actions">
-        <button class="topbar-btn secondary" title="导出数据" @click="$emit('export')">
+        <button type="button" class="topbar-btn secondary" title="导出数据" @click="$emit('export')">
           <span>导出</span>
         </button>
         <label class="topbar-btn secondary" title="导入数据">
@@ -51,8 +52,8 @@
             @change="onImportFile"
           />
         </label>
-        <button class="topbar-add" @click="$emit('add')">
-          <span class="add-icon">+</span>
+        <button type="button" class="topbar-add" @click="$emit('add')">
+          <span class="add-icon" aria-hidden="true">+</span>
           <span>新增记录</span>
         </button>
       </div>

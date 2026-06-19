@@ -8,6 +8,8 @@ const router = Router();
 
 const MAX_COMPANY_LEN = 100;
 const MAX_POSITION_LEN = 100;
+const VALID_STATUSES: StageStatus[] = ['pending', 'current', 'pass', 'fail', 'rejected', 'skip'];
+const VALID_STATUS_SET = new Set<string>(VALID_STATUSES);
 
 function sanitize(str: unknown): string | null {
   if (typeof str !== 'string') return null;
@@ -93,39 +95,50 @@ router.post('/', async (req, res) => {
 // 注意：此路由必须在 /:id 路由之前注册
 router.post('/import', async (req, res) => {
   try {
-    const imported = req.body as Interview[];
+    const imported = req.body as unknown;
     if (!Array.isArray(imported)) {
       return res.status(400).json({ error: '导入数据格式无效，应为数组' });
     }
 
-    // 验证每条记录的基本结构
+    // 验证每条记录的基本结构及阶段状态合法性
     for (const item of imported) {
-      if (!item.company || !item.position || !Array.isArray(item.stages) || item.stages.length !== 10) {
+      if (!item || typeof item !== 'object' ||
+          typeof item.company !== 'string' || typeof item.position !== 'string' ||
+          !Array.isArray(item.stages) || item.stages.length !== 10) {
         return res.status(400).json({ error: '导入数据结构不完整' });
       }
+      for (const s of item.stages) {
+        if (!s || typeof s.name !== 'string' || !VALID_STATUS_SET.has(s.status)) {
+          return res.status(400).json({ error: '导入数据包含无效的阶段状态' });
+        }
+      }
     }
+    // 验证通过后断言为 Interview[]
+    const validated = imported as Interview[];
 
     const data = await readData();
     const existingIds = new Set(data.map(i => i.id));
     const existingCompanies = new Set(data.map(i => `${i.company}|${i.position}`));
 
     let importedCount = 0;
-    for (const item of imported) {
+    for (const item of validated) {
       // 去重：按 id 或 company+position
-      if (existingIds.has(item.id)) continue;
+      if (item.id && existingIds.has(item.id)) continue;
       const key = `${item.company}|${item.position}`;
       if (existingCompanies.has(key)) continue;
 
       const now = new Date().toISOString();
+      // 确保新记录始终有可用 id，并正确登记到去重集合
+      const newId = item.id || uuidv4();
       data.push({
-        id: item.id || uuidv4(),
+        id: newId,
         company: item.company.trim(),
         position: item.position.trim(),
-        stages: item.stages,
+        stages: item.stages.map(s => ({ name: s.name, status: s.status })),
         createdAt: item.createdAt || now,
         updatedAt: item.updatedAt || now
       });
-      existingIds.add(item.id);
+      existingIds.add(newId);
       existingCompanies.add(key);
       importedCount++;
     }
@@ -180,8 +193,7 @@ router.patch('/:id/stage', async (req, res) => {
       return res.status(400).json({ error: '阶段索引无效' });
     }
 
-    const validStatuses: StageStatus[] = ['pending', 'current', 'pass', 'fail', 'rejected', 'skip'];
-    if (!validStatuses.includes(status)) {
+    if (!VALID_STATUS_SET.has(status)) {
       return res.status(400).json({ error: '状态值无效' });
     }
 

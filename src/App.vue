@@ -61,7 +61,7 @@
       :visible="showConfirmDialog"
       :company-name="interviewToDelete?.company ?? ''"
       @confirm="onConfirmDelete"
-      @cancel="showConfirmDialog = false"
+      @cancel="onCancelDelete"
     />
 
     <Toast :messages="toasts" />
@@ -69,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import type { Interview, ToastMessage, StageStatus } from './types';
 import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews } from './api';
 import TopBar from './components/TopBar.vue';
@@ -102,6 +102,15 @@ interface PopoverState {
 
 const activePopover = ref<PopoverState | null>(null);
 let toastCounter = 0;
+
+// 操作进行中标记，防止重复提交
+const busy = ref(false);
+
+// 任意模态/弹层打开时锁定背景滚动
+const anyModalOpen = computed(() => showAddModal.value || showEditModal.value || showConfirmDialog.value);
+watch(anyModalOpen, (open) => {
+  document.body.style.overflow = open ? 'hidden' : '';
+});
 
 // 计算进度百分比（已通过的阶段数 / 10）
 function getProgress(item: Interview): number {
@@ -164,14 +173,23 @@ async function loadInterviews() {
 onMounted(() => {
   loadInterviews();
   document.addEventListener('keydown', onKeydown);
+  // 滚动或缩放时 popover 定位会失效，直接关闭
+  window.addEventListener('scroll', onViewportChange, true);
+  window.addEventListener('resize', onViewportChange);
 });
 
 onUnmounted(() => {
   document.removeEventListener('keydown', onKeydown);
+  window.removeEventListener('scroll', onViewportChange, true);
+  window.removeEventListener('resize', onViewportChange);
+  // 兜底：组件卸载时恢复滚动
+  document.body.style.overflow = '';
 });
 
 // Add
 async function onAdd(company: string, position: string) {
+  if (busy.value) return;
+  busy.value = true;
   try {
     const newInterview = await createInterview(company, position);
     interviews.value.push(newInterview);
@@ -179,6 +197,8 @@ async function onAdd(company: string, position: string) {
     showToast('添加成功', 'success');
   } catch {
     showToast('添加失败', 'error');
+  } finally {
+    busy.value = false;
   }
 }
 
@@ -192,7 +212,9 @@ function onEditClick(interviewId: string) {
 }
 
 async function onEditSubmit(company: string, position: string) {
+  if (busy.value) return;
   if (!interviewToEdit.value) return;
+  busy.value = true;
   try {
     const updated = await updateInterview(interviewToEdit.value.id, company, position);
     const idx = interviews.value.findIndex(i => i.id === updated.id);
@@ -204,6 +226,8 @@ async function onEditSubmit(company: string, position: string) {
     showToast('已更新', 'success');
   } catch {
     showToast('更新失败', 'error');
+  } finally {
+    busy.value = false;
   }
 }
 
@@ -218,8 +242,10 @@ function onStageClick(interviewId: string, stageIndex: number, el: HTMLElement) 
 
 // Popover action
 async function onPopoverAction(status: StageStatus) {
+  if (busy.value) return;
   if (!activePopover.value) return;
   const { interviewId, stageIndex } = activePopover.value;
+  busy.value = true;
   try {
     const updated = await updateStage(interviewId, stageIndex, status);
     const idx = interviews.value.findIndex(i => i.id === interviewId);
@@ -231,6 +257,8 @@ async function onPopoverAction(status: StageStatus) {
   } catch {
     closePopover();
     showToast('更新失败', 'error');
+  } finally {
+    busy.value = false;
   }
 }
 
@@ -247,9 +275,16 @@ function onDeleteClick(interviewId: string) {
   }
 }
 
+function onCancelDelete() {
+  showConfirmDialog.value = false;
+  interviewToDelete.value = null;
+}
+
 async function onConfirmDelete() {
+  if (busy.value) return;
   if (!interviewToDelete.value) return;
   const id = interviewToDelete.value.id;
+  busy.value = true;
   try {
     await deleteInterview(id);
     interviews.value = interviews.value.filter(i => i.id !== id);
@@ -259,11 +294,15 @@ async function onConfirmDelete() {
   } catch {
     showConfirmDialog.value = false;
     showToast('删除失败', 'error');
+  } finally {
+    busy.value = false;
   }
 }
 
 // Export
 async function onExport() {
+  if (busy.value) return;
+  busy.value = true;
   try {
     const data = await exportInterviews();
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -276,11 +315,15 @@ async function onExport() {
     showToast('导出成功', 'success');
   } catch {
     showToast('导出失败', 'error');
+  } finally {
+    busy.value = false;
   }
 }
 
 // Import
 async function onImportFile(file: File) {
+  if (busy.value) return;
+  busy.value = true;
   try {
     const text = await file.text();
     const data = JSON.parse(text) as Interview[];
@@ -297,7 +340,14 @@ async function onImportFile(file: File) {
     }
   } catch {
     showToast('导入失败，请检查文件格式', 'error');
+  } finally {
+    busy.value = false;
   }
+}
+
+// 视口变化（滚动/缩放）时关闭 popover，避免定位失准
+function onViewportChange() {
+  if (activePopover.value) closePopover();
 }
 
 // Escape key handler
@@ -310,7 +360,7 @@ function onKeydown(e: KeyboardEvent) {
     } else if (showAddModal.value) {
       showAddModal.value = false;
     } else if (showConfirmDialog.value) {
-      showConfirmDialog.value = false;
+      onCancelDelete();
     }
   }
 }

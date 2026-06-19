@@ -10,16 +10,16 @@
         :class="placement"
       >
         <div class="popover-arrow"></div>
-        <button class="popover-btn pass" @click="$emit('action', 'pass')">
+        <button type="button" class="popover-btn pass" @click="$emit('action', 'pass')">
           <span class="btn-dot pass"></span>通过
         </button>
-        <button class="popover-btn fail" @click="$emit('action', 'fail')">
+        <button type="button" class="popover-btn fail" @click="$emit('action', 'fail')">
           <span class="btn-dot fail"></span>未通过
         </button>
-        <button class="popover-btn skip" @click="$emit('action', 'skip')">
+        <button type="button" class="popover-btn skip" @click="$emit('action', 'skip')">
           <span class="btn-dot skip"></span>跳过
         </button>
-        <button class="popover-btn rejected" @click="$emit('action', 'rejected')">
+        <button type="button" class="popover-btn rejected" @click="$emit('action', 'rejected')">
           <span class="btn-dot rejected"></span>拒绝
         </button>
       </div>

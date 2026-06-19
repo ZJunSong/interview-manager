@@ -3,15 +3,32 @@ import type { Interview } from './types';
 const BASE = '/api/interviews';
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
+  const hasBody = options?.body !== undefined;
   const res = await fetch(url, {
-    headers: { 'Content-Type': 'application/json' },
-    ...options
+    ...options,
+    headers: {
+      ...(hasBody ? { 'Content-Type': 'application/json' } : {}),
+      ...options?.headers
+    }
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body.error || '请求失败');
+    // 优先解析后端返回的错误信息
+    let message = '请求失败';
+    try {
+      const body = await res.json();
+      if (body && typeof body.error === 'string') message = body.error;
+    } catch {
+      // 非 JSON 响应（如网关错误）忽略，使用默认提示
+    }
+    const err = new Error(message) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
-  return res.json();
+  // 204 No Content 或空响应体直接返回，避免 json() 解析报错
+  if (res.status === 204) return undefined as T;
+  const text = await res.text();
+  if (!text) return undefined as T;
+  return JSON.parse(text) as T;
 }
 
 export function fetchInterviews(): Promise<Interview[]> {
