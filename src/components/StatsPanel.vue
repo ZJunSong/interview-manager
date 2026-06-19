@@ -17,7 +17,12 @@
     <span class="stat-divider"></span>
     <div class="stat-item">
       <span class="stat-value danger">{{ failedCount }}</span>
-      <span class="stat-label">未通过</span>
+      <span class="stat-label">已挂</span>
+    </div>
+    <span class="stat-divider"></span>
+    <div class="stat-item">
+      <span class="stat-value muted">{{ rejectedCount }}</span>
+      <span class="stat-label">已拒</span>
     </div>
     <span class="stat-divider"></span>
     <div class="stat-item stat-rate">
@@ -43,7 +48,7 @@ const activeCount = computed(() =>
   props.interviews.filter(i =>
     i.stages.some(s => s.status === 'current') &&
     !hasOffer(i) &&
-    !isFailed(i)
+    !isTerminated(i)
   ).length
 );
 
@@ -54,11 +59,20 @@ function hasOffer(i: Interview): boolean {
 }
 const offerCount = computed(() => props.interviews.filter(hasOffer).length);
 
-// 未通过：流程终结且未拿 offer（fail=公司未通过求职者，rejected=求职者拒绝公司，都算这家没成）
-function isFailed(i: Interview): boolean {
-  return i.stages.some(s => s.status === 'fail' || s.status === 'rejected') && !hasOffer(i);
+// 流程是否终结（已挂或已拒，且未拿 offer）
+function isTerminated(i: Interview): boolean {
+  return (i.stages.some(s => s.status === 'fail') || i.stages.some(s => s.status === 'rejected')) && !hasOffer(i);
 }
-const failedCount = computed(() => props.interviews.filter(isFailed).length);
+
+// 已挂：公司未通过求职者（任意阶段 fail，且未拿 offer）
+const failedCount = computed(() =>
+  props.interviews.filter(i => i.stages.some(s => s.status === 'fail') && !hasOffer(i)).length
+);
+
+// 已拒：求职者主动拒绝公司（任意阶段 rejected，且未拿 offer）
+const rejectedCount = computed(() =>
+  props.interviews.filter(i => i.stages.some(s => s.status === 'rejected') && !hasOffer(i)).length
+);
 
 // 面试转化率：进入面试阶段（一面=索引4及以后有 pass/current）的占比
 const interviewRate = computed(() => {
@@ -120,6 +134,7 @@ const interviewRate = computed(() => {
 .stat-value.accent { color: var(--color-accent); }
 .stat-value.success { color: var(--color-success); }
 .stat-value.danger { color: var(--color-danger); }
+.stat-value.muted { color: var(--color-text-secondary); }
 
 .stat-label {
   font-size: 11px;
@@ -142,7 +157,10 @@ const interviewRate = computed(() => {
     display: none;
   }
   .stat-item {
-    flex: 0 0 calc(33% - var(--space-sm));
+    flex: 0 0 calc(33.33% - var(--space-sm));
+  }
+  .stat-rate {
+    flex: 0 0 100%;
   }
 }
 </style>
