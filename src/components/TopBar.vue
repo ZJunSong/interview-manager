@@ -147,7 +147,7 @@ function onImportFile(e: Event) {
 }
 
 .topbar-title {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--color-text);
@@ -163,10 +163,10 @@ function onImportFile(e: Event) {
 
 .search-input {
   width: 100%;
-  padding: 7px 12px 7px 30px;
+  padding: 8px 14px 8px 32px;
   border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-full);
-  font-size: 13px;
+  font-size: 14px;
   background: var(--color-surface-solid);
   transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
@@ -182,10 +182,10 @@ function onImportFile(e: Event) {
 
 .search-icon {
   position: absolute;
-  left: 10px;
+  left: 11px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-text-tertiary);
   pointer-events: none;
 }
@@ -201,9 +201,9 @@ function onImportFile(e: Event) {
   display: flex;
   align-items: center;
   gap: 4px;
-  padding: 7px 14px;
+  padding: 8px 16px;
   border-radius: var(--radius-full);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text-secondary);
   transition: all var(--duration-fast) var(--ease-out);
@@ -233,11 +233,11 @@ function onImportFile(e: Event) {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 18px;
+  padding: 9px 20px;
   border-radius: var(--radius-full);
   background: var(--color-accent);
   color: #fff;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.01em;
   transition: all var(--duration-fast) var(--ease-out);
@@ -260,7 +260,7 @@ function onImportFile(e: Event) {
 }
 
 .add-icon {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 400;
   line-height: 1;
 }
@@ -276,14 +276,14 @@ function onImportFile(e: Event) {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-secondary);
   font-weight: 400;
 }
 
 .legend-node {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
   flex-shrink: 0;
   display: flex;
@@ -302,8 +302,8 @@ function onImportFile(e: Event) {
 }
 
 .legend-pulse {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #fff;
 }
@@ -323,7 +323,7 @@ function onImportFile(e: Event) {
 
 .legend-icon {
   color: #fff;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 700;
   line-height: 1;
 }
@@ -339,7 +339,7 @@ function onImportFile(e: Event) {
 }
 
 .topbar-count {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-tertiary);
   font-weight: 400;
   white-space: nowrap;
@@ -353,10 +353,10 @@ function onImportFile(e: Event) {
 }
 
 .topbar-sort {
-  padding: 5px 24px 5px 10px;
+  padding: 6px 26px 6px 12px;
   border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-text-secondary);
   background: var(--color-surface-solid);
   cursor: pointer;
@@ -380,10 +380,10 @@ function onImportFile(e: Event) {
 
 .sort-arrow {
   position: absolute;
-  right: 8px;
+  right: 9px;
   top: 50%;
   transform: translateY(-50%);
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-tertiary);
   pointer-events: none;
 }
