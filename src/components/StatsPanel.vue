@@ -16,8 +16,8 @@
     </div>
     <span class="stat-divider"></span>
     <div class="stat-item">
-      <span class="stat-value danger">{{ rejectedCount }}</span>
-      <span class="stat-label">已拒绝</span>
+      <span class="stat-value danger">{{ failedCount }}</span>
+      <span class="stat-label">未通过</span>
     </div>
     <span class="stat-divider"></span>
     <div class="stat-item stat-rate">
@@ -38,12 +38,12 @@ const props = defineProps<{
 // 投递总数
 const totalCount = computed(() => props.interviews.length);
 
-// 进行中：存在 current 阶段且未拿到 offer、未被拒
+// 进行中：存在 current 阶段且未拿到 offer、未终结
 const activeCount = computed(() =>
   props.interviews.filter(i =>
     i.stages.some(s => s.status === 'current') &&
     !hasOffer(i) &&
-    !isRejected(i)
+    !isFailed(i)
   ).length
 );
 
@@ -54,11 +54,11 @@ function hasOffer(i: Interview): boolean {
 }
 const offerCount = computed(() => props.interviews.filter(hasOffer).length);
 
-// 已拒绝：任意阶段为 rejected
-function isRejected(i: Interview): boolean {
-  return i.stages.some(s => s.status === 'rejected');
+// 未通过：流程终结且未拿 offer（fail=公司未通过求职者，rejected=求职者拒绝公司，都算这家没成）
+function isFailed(i: Interview): boolean {
+  return i.stages.some(s => s.status === 'fail' || s.status === 'rejected') && !hasOffer(i);
 }
-const rejectedCount = computed(() => props.interviews.filter(isRejected).length);
+const failedCount = computed(() => props.interviews.filter(isFailed).length);
 
 // 面试转化率：进入面试阶段（一面=索引4及以后有 pass/current）的占比
 const interviewRate = computed(() => {
