@@ -1,62 +1,72 @@
 <template>
   <header class="topbar">
     <div class="topbar-inner">
-      <h1 class="topbar-title">面试记录</h1>
+      <!-- 第一行：品牌 + 搜索 + 主操作 -->
+      <div class="topbar-row topbar-row-main">
+        <h1 class="topbar-title">面试记录</h1>
 
-      <div class="topbar-search">
-        <input
-          class="search-input"
-          type="text"
-          placeholder="搜索公司或职位…"
-          :value="searchQuery"
-          aria-label="搜索公司或职位"
-          autocomplete="off"
-          @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
-        />
-        <span class="search-icon" aria-hidden="true">⌕</span>
-      </div>
+        <div class="topbar-search">
+          <input
+            class="search-input"
+            type="text"
+            placeholder="搜索公司或职位…"
+            :value="searchQuery"
+            aria-label="搜索公司或职位"
+            autocomplete="off"
+            @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
+          />
+          <span class="search-icon" aria-hidden="true">⌕</span>
+        </div>
 
-      <div class="topbar-legend">
-        <div v-for="item in legend" :key="item.label" class="legend-item">
-          <span class="legend-node" :class="item.status">
-            <span v-if="item.status === 'pass'" class="legend-icon">✓</span>
-            <span v-else-if="item.status === 'fail'" class="legend-icon">✕</span>
-            <span v-else-if="item.status === 'rejected'" class="legend-icon rejected">−</span>
-            <span v-else-if="item.status === 'skip'" class="legend-icon skip">―</span>
-            <span v-else-if="item.status === 'current'" class="legend-pulse"></span>
-          </span>
-          <span class="legend-label">{{ item.label }}</span>
+        <div class="topbar-actions">
+          <button type="button" class="topbar-btn secondary" title="导出数据" @click="$emit('export')">
+            <span>导出</span>
+          </button>
+          <label class="topbar-btn secondary" title="导入数据">
+            <span>导入</span>
+            <input
+              type="file"
+              accept=".json"
+              class="file-input"
+              @change="onImportFile"
+            />
+          </label>
+          <button type="button" class="topbar-add" @click="$emit('add')">
+            <span class="add-icon" aria-hidden="true">+</span>
+            <span>新增记录</span>
+          </button>
         </div>
       </div>
 
-      <span v-if="totalCount > 0" class="topbar-count">
-        {{ searchQuery ? `${filteredCount} / ${totalCount}` : totalCount }} 条记录
-      </span>
+      <!-- 第二行：图例 + 计数 + 排序 -->
+      <div class="topbar-row topbar-row-sub" v-if="totalCount > 0 || legendAlways">
+        <div class="topbar-legend">
+          <div v-for="item in legend" :key="item.label" class="legend-item">
+            <span class="legend-node" :class="item.status">
+              <span v-if="item.status === 'pass'" class="legend-icon">✓</span>
+              <span v-else-if="item.status === 'fail'" class="legend-icon">✕</span>
+              <span v-else-if="item.status === 'rejected'" class="legend-icon rejected">−</span>
+              <span v-else-if="item.status === 'skip'" class="legend-icon skip">―</span>
+              <span v-else-if="item.status === 'current'" class="legend-pulse"></span>
+            </span>
+            <span class="legend-label">{{ item.label }}</span>
+          </div>
+        </div>
 
-      <select class="topbar-sort" :value="sortBy" aria-label="排序方式" @change="$emit('update:sortBy', ($event.target as HTMLSelectElement).value)">
-        <option value="newest">最新优先</option>
-        <option value="oldest">最早优先</option>
-        <option value="company">按公司名</option>
-        <option value="progress">按进度</option>
-      </select>
-
-      <div class="topbar-actions">
-        <button type="button" class="topbar-btn secondary" title="导出数据" @click="$emit('export')">
-          <span>导出</span>
-        </button>
-        <label class="topbar-btn secondary" title="导入数据">
-          <span>导入</span>
-          <input
-            type="file"
-            accept=".json"
-            class="file-input"
-            @change="onImportFile"
-          />
-        </label>
-        <button type="button" class="topbar-add" @click="$emit('add')">
-          <span class="add-icon" aria-hidden="true">+</span>
-          <span>新增记录</span>
-        </button>
+        <div class="topbar-meta">
+          <span v-if="totalCount > 0" class="topbar-count">
+            {{ searchQuery ? `${filteredCount} / ${totalCount}` : totalCount }} 条记录
+          </span>
+          <div class="topbar-sort-wrap">
+            <select class="topbar-sort" :value="sortBy" aria-label="排序方式" @change="$emit('update:sortBy', ($event.target as HTMLSelectElement).value)">
+              <option value="newest">最新优先</option>
+              <option value="oldest">最早优先</option>
+              <option value="company">按公司名</option>
+              <option value="progress">按进度</option>
+            </select>
+            <span class="sort-arrow" aria-hidden="true">▾</span>
+          </div>
+        </div>
       </div>
     </div>
   </header>
@@ -77,6 +87,9 @@ const emit = defineEmits<{
   'update:searchQuery': [query: string];
   'update:sortBy': [sortBy: string];
 }>();
+
+// 图例始终展示（即使无记录也作为说明），第二行在无记录时仅显示图例
+const legendAlways = true;
 
 const legend = [
   { status: 'pending', label: '未到达' },
@@ -104,16 +117,33 @@ function onImportFile(e: Event) {
   z-index: 100;
   background: rgba(245, 245, 240, 0.82);
   backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
   border-bottom: 1px solid var(--color-border);
 }
 
 .topbar-inner {
   max-width: 1200px;
   margin: 0 auto;
-  padding: var(--space-md) var(--space-xl);
+  padding: var(--space-sm) var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* 两行布局：主行与次行 */
+.topbar-row {
   display: flex;
   align-items: center;
-  gap: var(--space-lg);
+  gap: var(--space-md);
+}
+
+.topbar-row-main {
+  justify-content: space-between;
+}
+
+.topbar-row-sub {
+  justify-content: space-between;
+  min-height: 24px;
 }
 
 .topbar-title {
@@ -126,7 +156,9 @@ function onImportFile(e: Event) {
 
 .topbar-search {
   position: relative;
-  flex: 0 0 200px;
+  flex: 1 1 auto;
+  max-width: 360px;
+  min-width: 160px;
 }
 
 .search-input {
@@ -156,102 +188,6 @@ function onImportFile(e: Event) {
   font-size: 14px;
   color: var(--color-text-tertiary);
   pointer-events: none;
-}
-
-.topbar-legend {
-  display: flex;
-  gap: var(--space-md);
-  flex: 1;
-  justify-content: center;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  font-weight: 400;
-}
-
-.legend-node {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.legend-node.pending {
-  border: 2px dashed var(--color-pending-border);
-  background: var(--color-surface-solid);
-}
-
-.legend-node.current {
-  background: var(--color-accent);
-  animation: pulse-ring 2s infinite;
-}
-
-.legend-pulse {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: #fff;
-}
-
-.legend-node.pass { background: var(--color-success); }
-.legend-node.fail { background: var(--color-danger); }
-
-.legend-node.rejected {
-  border: 2px solid var(--color-danger);
-  background: var(--color-surface-solid);
-}
-
-.legend-node.skip {
-  border: 2px solid var(--color-gray);
-  background: var(--color-surface-solid);
-}
-
-.legend-icon {
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.legend-icon.rejected { color: var(--color-danger); }
-.legend-icon.skip { color: var(--color-gray); }
-
-.topbar-count {
-  font-size: 12px;
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-  white-space: nowrap;
-  flex-shrink: 0;
-  font-variant-numeric: tabular-nums;
-}
-
-.topbar-sort {
-  padding: 6px 10px;
-  border: 1.5px solid var(--color-border-strong);
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-solid);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.topbar-sort:focus {
-  border-color: var(--color-accent);
-}
-
-.topbar-sort:focus-visible {
-  box-shadow: 0 0 0 3px var(--color-accent-soft);
-  outline: none;
 }
 
 .topbar-actions {
@@ -329,29 +265,157 @@ function onImportFile(e: Event) {
   line-height: 1;
 }
 
-@media (max-width: 1000px) {
+/* 第二行：图例 + 元信息 */
+.topbar-legend {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  font-weight: 400;
+}
+
+.legend-node {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.legend-node.pending {
+  border: 2px dashed var(--color-pending-border);
+  background: var(--color-surface-solid);
+}
+
+.legend-node.current {
+  background: var(--color-accent);
+  animation: pulse-ring 2s infinite;
+}
+
+.legend-pulse {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.legend-node.pass { background: var(--color-success); }
+.legend-node.fail { background: var(--color-danger); }
+
+.legend-node.rejected {
+  border: 2px solid var(--color-danger);
+  background: var(--color-surface-solid);
+}
+
+.legend-node.skip {
+  border: 2px solid var(--color-gray);
+  background: var(--color-surface-solid);
+}
+
+.legend-icon {
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.legend-icon.rejected { color: var(--color-danger); }
+.legend-icon.skip { color: var(--color-gray); }
+
+.topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-shrink: 0;
+}
+
+.topbar-count {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 排序：自定义箭头 */
+.topbar-sort-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.topbar-sort {
+  padding: 5px 24px 5px 10px;
+  border: 1.5px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-solid);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.topbar-sort:hover {
+  border-color: var(--color-text-tertiary);
+}
+
+.topbar-sort:focus {
+  border-color: var(--color-accent);
+}
+
+.topbar-sort:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  outline: none;
+}
+
+.sort-arrow {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
+/* 中等屏：第二行图例与元信息换行 */
+@media (max-width: 760px) {
   .topbar-inner {
-    flex-wrap: wrap;
-    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
   }
-  .topbar-legend {
-    order: 4;
+  .topbar-row-sub {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-xs);
+  }
+  .topbar-meta {
     width: 100%;
-    justify-content: flex-start;
-    padding-top: var(--space-xs);
+    justify-content: space-between;
+  }
+}
+
+/* 小屏：主行也收起，操作按钮靠右 */
+@media (max-width: 560px) {
+  .topbar-title {
+    font-size: 18px;
+  }
+  .topbar-row-main {
+    flex-wrap: wrap;
   }
   .topbar-search {
-    flex: 1 1 150px;
-    order: 2;
-  }
-  .topbar-count {
     order: 3;
-  }
-  .topbar-sort {
-    order: 3;
-  }
-  .topbar-actions {
-    order: 1;
+    flex: 1 1 100%;
+    max-width: none;
   }
 }
 </style>
