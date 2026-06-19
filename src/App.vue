@@ -13,8 +13,8 @@
     />
 
     <main class="main">
-      <div v-if="loading" class="loading">
-        <div class="loading-spinner"></div>
+      <div v-if="loading" class="loading" role="status" aria-live="polite">
+        <div class="loading-spinner" aria-hidden="true"></div>
         <span>加载中…</span>
       </div>
 
@@ -375,6 +375,12 @@ function onKeydown(e: KeyboardEvent) {
   max-width: 1200px;
   margin: 0 auto;
   padding: var(--space-xl);
+}
+
+@media (max-width: 600px) {
+  .main {
+    padding: var(--space-md);
+  }
 }
 
 .card-list {

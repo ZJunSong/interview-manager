@@ -136,6 +136,12 @@ function formatDate(iso: string): string {
   background: var(--color-danger-soft);
 }
 
+.card-edit:focus-visible,
+.card-delete:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  outline: none;
+}
+
 .card-timeline {
   display: flex;
   align-items: center;
@@ -143,6 +149,22 @@ function formatDate(iso: string): string {
   padding-bottom: var(--space-2xl);
   overflow-x: auto;
   gap: 0;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.card-timeline::-webkit-scrollbar {
+  height: 6px;
+}
+.card-timeline::-webkit-scrollbar-track {
+  background: transparent;
+}
+.card-timeline::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-full);
+}
+.card-timeline::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-tertiary);
 }
 
 .card-timeline > :deep(.timeline-node) {

@@ -4,6 +4,10 @@
       class="node-circle"
       :class="stage.status"
       @click="handleClick"
+      @keydown="onKeydown"
+      :role="stage.status === 'current' ? 'button' : undefined"
+      :tabindex="stage.status === 'current' ? 0 : undefined"
+      :aria-label="stage.status === 'current' ? `设置「${stage.name}」阶段状态` : undefined"
       :ref="(el) => { if (el) nodeEl = el as HTMLElement }"
     >
       <span v-if="stage.status === 'pass'" class="node-icon">✓</span>
@@ -44,6 +48,14 @@ function handleClick() {
     emit('click', props.index, nodeEl.value);
   }
 }
+
+function onKeydown(e: KeyboardEvent) {
+  if (props.stage.status !== 'current') return;
+  if (e.key === 'Enter' || e.key === ' ') {
+    e.preventDefault();
+    if (nodeEl.value) emit('click', props.index, nodeEl.value);
+  }
+}
 </script>
 
 <style scoped>
@@ -71,6 +83,11 @@ function handleClick() {
 
 .interactive .node-circle:hover {
   transform: scale(1.12);
+}
+
+.interactive .node-circle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
 /* pending */

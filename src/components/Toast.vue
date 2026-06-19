@@ -1,5 +1,5 @@
 <template>
-  <div class="toast-container">
+  <div class="toast-container" role="status" aria-live="polite">
     <TransitionGroup name="toast">
       <div
         v-for="msg in messages"
@@ -7,7 +7,7 @@
         class="toast"
         :class="msg.type"
       >
-        <span class="toast-icon">{{ msg.type === 'success' ? '✓' : '✕' }}</span>
+        <span class="toast-icon" aria-hidden="true">{{ msg.type === 'success' ? '✓' : '✕' }}</span>
         <span class="toast-text">{{ msg.text }}</span>
       </div>
     </TransitionGroup>
@@ -47,7 +47,9 @@ defineProps<{
   backdrop-filter: var(--backdrop-blur);
   box-shadow: var(--shadow-card);
   pointer-events: auto;
-  white-space: nowrap;
+  max-width: min(90vw, 480px);
+  white-space: normal;
+  text-align: center;
 }
 
 .toast.success {

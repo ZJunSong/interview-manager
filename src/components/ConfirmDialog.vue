@@ -1,8 +1,8 @@
 <template>
   <Teleport to="body">
     <div v-if="visible" class="modal-overlay" @click.self="$emit('cancel')">
-      <div class="modal" style="width: 360px">
-        <p class="dialog-message">
+      <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-msg" style="width: 360px">
+        <p id="confirm-dialog-msg" class="dialog-message">
           确定要删除「<strong>{{ companyName }}</strong>」的面试记录吗？此操作不可撤销。
         </p>
         <div class="modal-actions">

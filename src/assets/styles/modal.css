@@ -19,6 +19,8 @@
   padding: var(--space-xl);
   width: 400px;
   max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
   animation: scale-in var(--duration-normal) var(--ease-spring);
 }
 
@@ -47,12 +49,13 @@
   border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   font-size: 14px;
-  transition: border-color var(--duration-fast) var(--ease-out);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
   background: var(--color-surface-solid);
 }
 
 .field-input:focus {
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .field-input::placeholder {

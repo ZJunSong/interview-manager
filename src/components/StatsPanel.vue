@@ -1,5 +1,5 @@
 <template>
-  <div class="stats">
+  <div class="stats" role="group" aria-label="面试统计概览">
     <div class="stat-item">
       <span class="stat-value">{{ interviews.length }}</span>
       <span class="stat-label">总记录</span>
@@ -80,6 +80,7 @@ const avgProgress = computed(() => {
   letter-spacing: -0.02em;
   color: var(--color-text);
   line-height: 1.2;
+  font-variant-numeric: tabular-nums;
 }
 
 .stat-value.accent { color: var(--color-accent); }

@@ -88,10 +88,6 @@ const pos = computed(() => {
   animation: scale-in var(--duration-fast) var(--ease-spring);
 }
 
-.popover.above {
-  /* Position is already calculated in JS, no transform needed */
-}
-
 .popover-arrow {
   position: absolute;
   width: 12px;
@@ -131,6 +127,11 @@ const pos = computed(() => {
 
 .popover-btn:hover {
   background: var(--color-bg);
+}
+
+.popover-btn:focus-visible {
+  background: var(--color-accent-soft);
+  outline: none;
 }
 
 .btn-dot {

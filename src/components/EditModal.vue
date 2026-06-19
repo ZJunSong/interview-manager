@@ -1,27 +1,31 @@
 <template>
   <Teleport to="body">
     <div v-if="visible && interview" class="modal-overlay" @click.self="close">
-      <div class="modal">
-        <h2 class="modal-title">编辑面试信息</h2>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+        <h2 id="edit-modal-title" class="modal-title">编辑面试信息</h2>
 
         <div class="modal-field">
-          <label class="field-label">公司名称</label>
+          <label class="field-label" for="edit-company">公司名称</label>
           <input
+            id="edit-company"
             ref="companyInput"
             v-model="company"
             class="field-input"
             placeholder="输入公司名称"
+            autocomplete="off"
             @keydown.enter="positionInput?.focus()"
           />
         </div>
 
         <div class="modal-field">
-          <label class="field-label">投递职位</label>
+          <label class="field-label" for="edit-position">投递职位</label>
           <input
+            id="edit-position"
             ref="positionInput"
             v-model="position"
             class="field-input"
             placeholder="输入投递职位"
+            autocomplete="off"
             @keydown.enter="submit"
           />
         </div>

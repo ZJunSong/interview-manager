@@ -10,6 +10,7 @@
           placeholder="搜索公司或职位…"
           :value="searchQuery"
           aria-label="搜索公司或职位"
+          autocomplete="off"
           @input="$emit('update:searchQuery', ($event.target as HTMLInputElement).value)"
         />
         <span class="search-icon" aria-hidden="true">⌕</span>
@@ -229,6 +230,7 @@ function onImportFile(e: Event) {
   font-weight: 400;
   white-space: nowrap;
   flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .topbar-sort {
@@ -240,11 +242,15 @@ function onImportFile(e: Event) {
   background: var(--color-surface-solid);
   cursor: pointer;
   flex-shrink: 0;
-  transition: border-color var(--duration-fast) var(--ease-out);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .topbar-sort:focus {
   border-color: var(--color-accent);
+}
+
+.topbar-sort:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
   outline: none;
 }
 
@@ -272,6 +278,11 @@ function onImportFile(e: Event) {
 .topbar-btn.secondary:hover {
   color: var(--color-text);
   background: var(--color-bg);
+}
+
+.topbar-btn:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  outline: none;
 }
 
 .file-input {
@@ -305,6 +316,11 @@ function onImportFile(e: Event) {
 
 .topbar-add:active {
   transform: translateY(0);
+}
+
+.topbar-add:focus-visible {
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
+  outline: none;
 }
 
 .add-icon {

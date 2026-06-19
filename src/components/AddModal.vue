@@ -1,17 +1,19 @@
 <template>
   <Teleport to="body">
     <div v-if="visible" class="modal-overlay" @click.self="close">
-      <div class="modal">
-        <h2 class="modal-title">新增面试记录</h2>
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="add-modal-title">
+        <h2 id="add-modal-title" class="modal-title">新增面试记录</h2>
 
         <div class="modal-field">
-          <label class="field-label">公司名称</label>
+          <label class="field-label" for="add-company">公司名称</label>
           <div ref="companyInputWrap" class="field-input-wrap">
             <input
+              id="add-company"
               ref="companyInput"
               v-model="company"
               class="field-input"
               placeholder="输入公司名称"
+              autocomplete="off"
               @keydown="onCompanyKeydown"
               @focus="showCompanyDropdown = true"
               @input="onCompanyInput"
@@ -30,13 +32,15 @@
         </div>
 
         <div class="modal-field">
-          <label class="field-label">投递职位</label>
+          <label class="field-label" for="add-position">投递职位</label>
           <div ref="positionInputWrap" class="field-input-wrap">
             <input
+              id="add-position"
               ref="positionInput"
               v-model="position"
               class="field-input"
               placeholder="输入投递职位"
+              autocomplete="off"
               @keydown="onPositionKeydown"
               @focus="showPositionDropdown = true"
               @input="onPositionInput"
