@@ -33,15 +33,12 @@
         {{ searchQuery ? `${filteredCount} / ${totalCount}` : totalCount }} 条记录
       </span>
 
-      <div class="topbar-sort-wrap">
-        <select class="topbar-sort" :value="sortBy" aria-label="排序方式" @change="$emit('update:sortBy', ($event.target as HTMLSelectElement).value)">
-          <option value="newest">最新优先</option>
-          <option value="oldest">最早优先</option>
-          <option value="company">按公司名</option>
-          <option value="progress">按进度</option>
-        </select>
-        <span class="sort-arrow" aria-hidden="true">▾</span>
-      </div>
+      <select class="topbar-sort" :value="sortBy" aria-label="排序方式" @change="$emit('update:sortBy', ($event.target as HTMLSelectElement).value)">
+        <option value="newest">最新优先</option>
+        <option value="oldest">最早优先</option>
+        <option value="company">按公司名</option>
+        <option value="progress">按进度</option>
+      </select>
 
       <div class="topbar-actions">
         <button type="button" class="topbar-btn secondary" title="导出数据" @click="$emit('export')">
@@ -236,26 +233,16 @@ function onImportFile(e: Event) {
   font-variant-numeric: tabular-nums;
 }
 
-.topbar-sort-wrap {
-  position: relative;
-  flex-shrink: 0;
-}
-
 .topbar-sort {
-  padding: 6px 26px 6px 10px;
+  padding: 6px 10px;
   border: 1.5px solid var(--color-border-strong);
   border-radius: var(--radius-sm);
   font-size: 12px;
   color: var(--color-text-secondary);
   background: var(--color-surface-solid);
   cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
+  flex-shrink: 0;
   transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
-}
-
-.topbar-sort:hover {
-  border-color: var(--color-text-tertiary);
 }
 
 .topbar-sort:focus {
@@ -265,16 +252,6 @@ function onImportFile(e: Event) {
 .topbar-sort:focus-visible {
   box-shadow: 0 0 0 3px var(--color-accent-soft);
   outline: none;
-}
-
-.sort-arrow {
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 10px;
-  color: var(--color-text-tertiary);
-  pointer-events: none;
 }
 
 .topbar-actions {
@@ -370,7 +347,7 @@ function onImportFile(e: Event) {
   .topbar-count {
     order: 3;
   }
-  .topbar-sort-wrap {
+  .topbar-sort {
     order: 3;
   }
   .topbar-actions {

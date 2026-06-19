@@ -384,15 +384,9 @@ function onKeydown(e: KeyboardEvent) {
 }
 
 .card-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(var(--grid-min), 1fr));
+  display: flex;
+  flex-direction: column;
   gap: var(--space-md);
-}
-
-@media (max-width: 600px) {
-  .card-list {
-    grid-template-columns: 1fr;
-  }
 }
 
 .loading {

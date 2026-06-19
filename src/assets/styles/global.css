@@ -35,10 +35,6 @@
   --color-pending-border: #d4d4d8;
   --color-connector: #e4e4e7;
   --color-connector-pass: #22c55e;
-  --color-current-glow: rgba(37, 99, 235, 0.35);
-
-  /* Grid layout */
-  --grid-min: 520px;
 
   /* Spacing scale */
   --space-xs: 4px;

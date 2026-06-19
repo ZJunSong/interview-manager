@@ -18,19 +18,16 @@
               @focus="showCompanyDropdown = true"
               @input="onCompanyInput"
             />
-            <Transition name="dropdown">
-              <ul v-if="showCompanyDropdown && filteredCompanies.length > 0" class="dropdown">
-                <li class="dropdown-header" v-if="!company">常见公司</li>
-                <li
-                  v-for="(item, i) in filteredCompanies"
-                  :key="item"
-                  class="dropdown-item"
-                  :class="{ active: i === companyHighlight }"
-                  @click="selectCompany(item)"
-                  @mouseenter="companyHighlight = i"
-                >{{ item }}</li>
-              </ul>
-            </Transition>
+            <ul v-if="showCompanyDropdown && filteredCompanies.length > 0" class="dropdown">
+              <li
+                v-for="(item, i) in filteredCompanies"
+                :key="item"
+                class="dropdown-item"
+                :class="{ active: i === companyHighlight }"
+                @click="selectCompany(item)"
+                @mouseenter="companyHighlight = i"
+              >{{ item }}</li>
+            </ul>
           </div>
         </div>
 
@@ -48,19 +45,16 @@
               @focus="showPositionDropdown = true"
               @input="onPositionInput"
             />
-            <Transition name="dropdown">
-              <ul v-if="showPositionDropdown && filteredPositions.length > 0" class="dropdown">
-                <li class="dropdown-header" v-if="!position">常用职位</li>
-                <li
-                  v-for="(item, i) in filteredPositions"
-                  :key="item"
-                  class="dropdown-item"
-                  :class="{ active: i === positionHighlight }"
-                  @click="selectPosition(item)"
-                  @mouseenter="positionHighlight = i"
-                >{{ item }}</li>
-              </ul>
-            </Transition>
+            <ul v-if="showPositionDropdown && filteredPositions.length > 0" class="dropdown">
+              <li
+                v-for="(item, i) in filteredPositions"
+                :key="item"
+                class="dropdown-item"
+                :class="{ active: i === positionHighlight }"
+                @click="selectPosition(item)"
+                @mouseenter="positionHighlight = i"
+              >{{ item }}</li>
+            </ul>
           </div>
         </div>
 
@@ -251,66 +245,28 @@ watch(() => props.visible, (val) => {
 
 .dropdown {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   left: 0;
   right: 0;
   background: var(--color-surface-solid);
   border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-popover);
-  max-height: 220px;
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-card);
+  max-height: 200px;
   overflow-y: auto;
   z-index: 10;
-  padding: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--color-border-strong) transparent;
-}
-
-.dropdown::-webkit-scrollbar {
-  width: 6px;
-}
-.dropdown::-webkit-scrollbar-thumb {
-  background: var(--color-border-strong);
-  border-radius: var(--radius-full);
-}
-
-.dropdown-header {
-  padding: 6px 10px 4px;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--color-text-tertiary);
-  text-transform: uppercase;
 }
 
 .dropdown-item {
-  padding: 8px 12px;
+  padding: 8px 14px;
   font-size: 13px;
   cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: background var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .dropdown-item.active,
 .dropdown-item:hover {
   background: var(--color-accent-soft);
   color: var(--color-accent);
-  font-weight: 500;
-}
-
-/* 下拉展开/收起动画 */
-.dropdown-enter-active {
-  transition: opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
-}
-.dropdown-leave-active {
-  transition: opacity var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out);
-}
-.dropdown-enter-from,
-.dropdown-leave-to {
-  opacity: 0;
-  transform: translateY(-6px);
 }
 </style>
