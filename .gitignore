@@ -1,20 +1,49 @@
+# Dependencies
 node_modules/
+.pnpm-store/
+
+# Build outputs
 dist/
 dist-desktop/
+dist-web/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
 .vscode/
-.claude/
-data/
-*.tsbuildinfo
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
 
 # Package specific
 packages/*/node_modules/
 packages/*/dist/
 packages/*/dist-desktop/
 
-# Environment
-.env
-.env.local
+# Data (runtime generated)
+data/
 
-# OS
-.DS_Store
-Thumbs.db
+# TypeScript
+*.tsbuildinfo
+
+# Claude
+.claude/
+
+# Codegraph
+.codegraph/
+
+# Work directory
+.omo/
