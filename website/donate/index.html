@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>打赏 - Interview Manager</title>
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .donate-page {
+      padding: 120px 24px 80px;
+      min-height: 100vh;
+    }
+    
+    .donate-container {
+      max-width: 800px;
+      margin: 0 auto;
+      text-align: center;
+    }
+    
+    .donate-header {
+      margin-bottom: 48px;
+    }
+    
+    .donate-header h1 {
+      font-size: 36px;
+      margin-bottom: 16px;
+    }
+    
+    .donate-header p {
+      color: var(--text-secondary);
+      font-size: 18px;
+    }
+    
+    .donate-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 32px;
+      margin-bottom: 48px;
+    }
+    
+    .donate-card {
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    }
+    
+    .donate-card h3 {
+      font-size: 24px;
+      margin-bottom: 24px;
+    }
+    
+    .qr-placeholder {
+      width: 200px;
+      height: 200px;
+      background: var(--bg-secondary);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 24px;
+      color: var(--text-secondary);
+    }
+    
+    .donate-amount {
+      color: var(--text-secondary);
+      font-size: 14px;
+    }
+    
+    .donate-message {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 32px;
+      margin-top: 48px;
+    }
+    
+    .donate-message h2 {
+      font-size: 24px;
+      margin-bottom: 16px;
+    }
+    
+    .donate-message p {
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+    
+    .donate-message .highlight {
+      color: var(--primary);
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="/" class="nav-logo">📋 Interview Manager</a>
+      <div class="nav-links">
+        <a href="/" class="nav-link">首页</a>
+        <a href="/download/" class="nav-link">下载</a>
+        <a href="/docs/" class="nav-link">文档</a>
+        <a href="/donate/" class="nav-link active">打赏</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="donate-page">
+    <div class="donate-container">
+      <div class="donate-header">
+        <h1>请作者喝杯咖啡</h1>
+        <p>如果你觉得这个工具对你有帮助，可以请作者喝杯咖啡 ☕</p>
+      </div>
+      
+      <div class="donate-cards">
+        <div class="donate-card">
+          <h3>💚 微信赞赏</h3>
+          <div class="qr-placeholder">
+            微信二维码占位<br>请替换为真实图片
+          </div>
+          <p class="donate-amount">请作者喝杯咖啡</p>
+        </div>
+        
+        <div class="donate-card">
+          <h3>💙 支付宝赞赏</h3>
+          <div class="qr-placeholder">
+            支付宝二维码占位<br>请替换为真实图片
+          </div>
+          <p class="donate-amount">请作者喝杯咖啡</p>
+        </div>
+      </div>
+      
+      <div class="donate-message">
+        <h2>关于这个项目</h2>
+        <p>
+          Interview Manager 是一个<span class="highlight">完全开源</span>的项目，
+          代码托管在 GitHub 上，任何人都可以查看、使用和贡献。
+        </p>
+        <p>
+          这个工具是<span class="highlight">完全免费</span>使用的，
+          打赏是自愿的，用于支持项目的持续维护和开发。
+        </p>
+        <p>
+          感谢每一位用户的支持和反馈，让这个工具变得更好！
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+{
+  "appId": "com.interview-manager.desktop",
+  "productName": "Interview Manager",
+  "version": "1.0.0",
+  "directories": {
+    "output": "dist-desktop"
+  },
+  "files": [
+    "dist/**/*",
+    "server/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "assets/icon.png"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Interview Manager"
+  },
+  "extraResources": [
+    {
+      "from": "assets/",
+      "to": "assets/"
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+services:
+  web:
+    build:
+      context: ../..
+      dockerfile: packages/web/Dockerfile
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./data:/app/data
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - JWT_SECRET=${JWT_SECRET:-change-this-in-production}
+      - DATA_DIR=/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/api/interviews/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

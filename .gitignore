@@ -1,6 +1,20 @@
 node_modules/
 dist/
+dist-desktop/
 .vscode/
 .claude/
-data/interviews.json
+data/
 *.tsbuildinfo
+
+# Package specific
+packages/*/node_modules/
+packages/*/dist/
+packages/*/dist-desktop/
+
+# Environment
+.env
+.env.local
+
+# OS
+.DS_Store
+Thumbs.db

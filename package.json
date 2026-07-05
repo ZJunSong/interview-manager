@@ -2,7 +2,7 @@
   "name": "interview-manager",
   "version": "1.0.0",
   "description": "A lightweight job interview progress tracker with timeline visualization",
-  "private": false,
+  "private": true,
   "license": "MIT",
   "keywords": [
     "interview",
@@ -26,7 +26,12 @@
     "start": "cross-env NODE_ENV=production node dist/server/index.js",
     "preview": "npm run build && npm run start",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "desktop:dev": "pnpm --filter @interview-manager/desktop dev",
+    "desktop:build": "pnpm --filter @interview-manager/desktop build:win",
+    "web:dev": "pnpm --filter @interview-manager/web dev",
+    "web:build": "pnpm --filter @interview-manager/web build",
+    "web:start": "pnpm --filter @interview-manager/web start"
   },
   "dependencies": {
     "cors": "^2.8.5",
