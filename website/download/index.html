@@ -5,134 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>下载 - Interview Manager</title>
   <link rel="stylesheet" href="../styles.css">
-  <style>
-    .download-page {
-      padding: 120px 24px 80px;
-      min-height: 100vh;
-    }
-    
-    .download-container {
-      max-width: 600px;
-      margin: 0 auto;
-      text-align: center;
-    }
-    
-    .download-card {
-      background: white;
-      border-radius: 16px;
-      padding: 48px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-      margin-top: 40px;
-    }
-    
-    .download-icon {
-      font-size: 72px;
-      margin-bottom: 24px;
-    }
-    
-    .download-title {
-      font-size: 28px;
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-    
-    .download-version {
-      color: var(--text-secondary);
-      margin-bottom: 32px;
-    }
-    
-    .download-btn {
-      display: inline-block;
-      padding: 16px 48px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border-radius: 8px;
-      font-size: 18px;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s;
-      margin-bottom: 24px;
-    }
-    
-    .download-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
-    }
-    
-    .download-info {
-      color: var(--text-secondary);
-      font-size: 14px;
-      margin-bottom: 32px;
-    }
-    
-    .download-features {
-      text-align: left;
-      margin-top: 32px;
-      padding-top: 32px;
-      border-top: 1px solid var(--border);
-    }
-    
-    .download-features h3 {
-      font-size: 18px;
-      margin-bottom: 16px;
-    }
-    
-    .download-features ul {
-      list-style: none;
-    }
-    
-    .download-features li {
-      padding: 8px 0;
-      color: var(--text-secondary);
-    }
-    
-    .download-features li::before {
-      content: "✓ ";
-      color: var(--primary);
-    }
-    
-    .version-history {
-      margin-top: 48px;
-      text-align: left;
-    }
-    
-    .version-history h3 {
-      font-size: 18px;
-      margin-bottom: 16px;
-    }
-    
-    .version-item {
-      padding: 16px;
-      background: var(--bg-secondary);
-      border-radius: 8px;
-      margin-bottom: 12px;
-    }
-    
-    .version-item-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    
-    .version-item-tag {
-      font-weight: 600;
-    }
-    
-    .version-item-date {
-      color: var(--text-secondary);
-      font-size: 14px;
-    }
-    
-    .version-item-changes {
-      color: var(--text-secondary);
-      font-size: 14px;
-    }
-  </style>
 </head>
 <body>
   <nav class="navbar">
     <div class="nav-container">
-      <a href="/" class="nav-logo">📋 Interview Manager</a>
+      <a href="/" class="nav-logo">Interview<span>Manager</span></a>
       <div class="nav-links">
         <a href="/" class="nav-link">首页</a>
         <a href="/download/" class="nav-link active">下载</a>
@@ -142,60 +19,69 @@
     </div>
   </nav>
 
-  <div class="download-page">
-    <div class="download-container">
-      <h1>下载 Interview Manager</h1>
-      <p class="download-version">当前版本: <span id="version">v1.0.0</span></p>
-      
+  <div class="page-header">
+    <h1 class="page-title">下载</h1>
+    <p class="page-desc">适用于 Windows 10/11 (64位)，下载安装即用</p>
+  </div>
+
+  <div class="content-section">
+    <div class="container">
       <div class="download-card">
-        <div class="download-icon">💻</div>
-        <h2 class="download-title">Windows 桌面版</h2>
-        <p class="download-version">适用于 Windows 10/11 (64位)</p>
+        <h3>Windows 桌面版</h3>
+        <p class="version">当前版本: <span id="version">v1.0.0</span></p>
         
-        <a id="download-btn" href="#" class="download-btn">
+        <ul class="download-features">
+          <li>无需安装 Node.js，双击即用</li>
+          <li>数据存储在本地，完全离线可用</li>
+          <li>无账号要求，隐私完全自主</li>
+          <li>支持导入导出 JSON 备份</li>
+        </ul>
+        
+        <a id="download-btn" href="#" class="btn btn-primary btn-block">
           下载安装包 (.exe)
         </a>
         
-        <p class="download-info">
-          文件大小: <span id="file-size">约 80MB</span><br>
-          下载来自 GitHub Releases (全球 CDN 加速)
+        <p style="margin-top: 20px; font-size: 13px; color: var(--text-muted);">
+          文件大小: <span id="file-size">约 80MB</span> · 下载来自 GitHub Releases
         </p>
-        
-        <div class="download-features">
-          <h3>功能特点</h3>
-          <ul>
-            <li>无需安装 Node.js，双击即用</li>
-            <li>数据存储在本地，完全离线可用</li>
-            <li>无账号要求，隐私完全自主</li>
-            <li>支持导入导出 JSON 备份</li>
-          </ul>
-        </div>
       </div>
-      
-      <div class="version-history">
-        <h3>更新日志</h3>
-        <div class="version-item">
-          <div class="version-item-header">
-            <span class="version-item-tag">v1.0.0</span>
-            <span class="version-item-date">2024-01-01</span>
+
+      <div style="max-width: 600px; margin: 0 auto;">
+        <h2 style="font-size: 24px; margin-bottom: 24px;">更新日志</h2>
+        <div style="padding: 20px; background: var(--bg-warm); border-radius: var(--radius); margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <strong>v1.0.0</strong>
+            <span style="color: var(--text-muted); font-size: 14px;">2024-01-01</span>
           </div>
-          <p class="version-item-changes">初始版本发布</p>
+          <p style="color: var(--text-secondary); font-size: 14px;">初始版本发布</p>
         </div>
       </div>
     </div>
   </div>
 
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-content">
+        <div class="footer-info">
+          <p>Interview Manager</p>
+        </div>
+        <div class="footer-links">
+          <a href="/">首页</a>
+          <a href="/download/">下载</a>
+          <a href="/docs/">文档</a>
+          <a href="/donate/">打赏</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
   <script>
-    // Fetch latest release from GitHub API
     async function loadLatestRelease() {
       try {
         const response = await fetch('https://api.github.com/repos/your-username/InterviewManager/releases/latest');
         if (response.ok) {
           const release = await response.json();
-          
           document.getElementById('version').textContent = release.tag_name;
-          
-          // Find Windows installer
           const windowsAsset = release.assets.find(a => a.name.endsWith('.exe'));
           if (windowsAsset) {
             document.getElementById('download-btn').href = windowsAsset.browser_download_url;
@@ -206,7 +92,6 @@
         console.log('Using default version info');
       }
     }
-    
     loadLatestRelease();
   </script>
 </body>
