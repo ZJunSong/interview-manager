@@ -11,23 +11,23 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '1mb' }));
 
-// Public health check (no auth required, for Docker/k8s)
+// 公开健康检查
 app.get('/healthz', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Auth routes (no auth required)
+// Auth 路由（无需认证）
 app.use('/api/auth', authRoutes);
 
-// Interview routes (auth required)
+// Interview 路由（需要认证）
 app.use('/api/interviews', interviewRoutes);
 
-// Unknown API routes
+// 未知 API 路由
 app.use('/api', (_req, res) => {
   res.status(404).json({ error: '接口不存在' });
 });
 
-// Serve static frontend files in production
+// 生产环境：静态文件服务
 if (process.env.NODE_ENV === 'production') {
   app.use(express.static(path.join(__dirname, '..')));
   app.get('*', (_req, res) => {
@@ -35,22 +35,20 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-// Initialize database and start server
 async function start() {
   try {
     await initDatabase();
-    console.log('Database initialized');
+    console.log('[Server] 数据库已初始化');
     
     const server = app.listen(PORT, () => {
-      console.log(`Server running on http://localhost:${PORT}`);
+      console.log(`[Server] 运行在 http://localhost:${PORT}`);
     });
     
-    // Graceful shutdown
     function shutdown(signal: string) {
-      console.log(`\n收到 ${signal}，正在关闭服务器…`);
+      console.log(`\n[Server] 收到 ${signal}，正在关闭...`);
       closeDatabase();
       server.close(() => {
-        console.log('服务器已关闭');
+        console.log('[Server] 已关闭');
         process.exit(0);
       });
       setTimeout(() => process.exit(1), 5000).unref();
@@ -59,7 +57,7 @@ async function start() {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (err) {
-    console.error('Failed to start server:', err);
+    console.error('[Server] 启动失败:', err);
     process.exit(1);
   }
 }

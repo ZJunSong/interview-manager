@@ -1,11 +1,9 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from './database';
-import { authMiddleware, AuthRequest } from './middleware';
+import { authMiddleware, adminMiddleware, AuthRequest } from './middleware';
 
 const router = Router();
-
-// All routes require authentication
 router.use(authMiddleware);
 
 const MAX_COMPANY_LEN = 100;
@@ -26,24 +24,19 @@ function sanitize(str: unknown): string | null {
 }
 
 // GET /api/interviews/health
-router.get('/health', async (req: AuthRequest, res) => {
-  try {
-    const db = getDatabase();
-    const result = db.prepare('SELECT COUNT(*) as count FROM interviews WHERE user_id = ?').get(req.user!.userId) as { count: number };
-    res.json({ 
-      status: 'ok', 
-      count: result.count, 
-      timestamp: new Date().toISOString(),
-      user: req.user!.username
-    });
-  } catch (err) {
-    console.error('[GET /health] 健康检查失败:', err);
-    res.status(500).json({ status: 'error', error: '服务异常' });
-  }
+router.get('/health', (req: AuthRequest, res) => {
+  const db = getDatabase();
+  const result = db.prepare('SELECT COUNT(*) as count FROM interviews WHERE user_id = ?').get(req.user!.userId) as { count: number };
+  res.json({ 
+    status: 'ok', 
+    count: result.count, 
+    timestamp: new Date().toISOString(),
+    user: req.user!.username
+  });
 });
 
 // GET /api/interviews
-router.get('/', async (req: AuthRequest, res) => {
+router.get('/', (req: AuthRequest, res) => {
   try {
     const db = getDatabase();
     const rows = db.prepare('SELECT * FROM interviews WHERE user_id = ? ORDER BY created_at DESC').all(req.user!.userId) as any[];
@@ -53,6 +46,7 @@ router.get('/', async (req: AuthRequest, res) => {
       company: row.company,
       position: row.position,
       stages: JSON.parse(row.stages),
+      status: row.status,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -65,7 +59,7 @@ router.get('/', async (req: AuthRequest, res) => {
 });
 
 // GET /api/interviews/export
-router.get('/export', async (req: AuthRequest, res) => {
+router.get('/export', (req: AuthRequest, res) => {
   try {
     const db = getDatabase();
     const rows = db.prepare('SELECT * FROM interviews WHERE user_id = ?').all(req.user!.userId) as any[];
@@ -75,6 +69,7 @@ router.get('/export', async (req: AuthRequest, res) => {
       company: row.company,
       position: row.position,
       stages: JSON.parse(row.stages),
+      status: row.status,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -89,7 +84,7 @@ router.get('/export', async (req: AuthRequest, res) => {
 });
 
 // POST /api/interviews
-router.post('/', async (req: AuthRequest, res) => {
+router.post('/', (req: AuthRequest, res) => {
   try {
     const { company: rawCompany, position: rawPosition } = req.body;
     const company = sanitize(rawCompany);
@@ -111,15 +106,16 @@ router.post('/', async (req: AuthRequest, res) => {
     
     const db = getDatabase();
     db.prepare(`
-      INSERT INTO interviews (id, user_id, company, position, stages, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(id, req.user!.userId, company, position, JSON.stringify(stages), now, now);
+      INSERT INTO interviews (id, user_id, company, position, stages, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, req.user!.userId, company, position, JSON.stringify(stages), 'active', now, now);
     
     res.status(201).json({
       id,
       company,
       position,
       stages,
+      status: 'active',
       createdAt: now,
       updatedAt: now
     });
@@ -130,7 +126,7 @@ router.post('/', async (req: AuthRequest, res) => {
 });
 
 // POST /api/interviews/import
-router.post('/import', async (req: AuthRequest, res) => {
+router.post('/import', (req: AuthRequest, res) => {
   try {
     const { data: imported, mode = 'merge' } = req.body;
     
@@ -138,7 +134,6 @@ router.post('/import', async (req: AuthRequest, res) => {
       return res.status(400).json({ error: '导入数据格式无效，应为数组' });
     }
     
-    // Validate each record
     for (const item of imported) {
       if (!item || typeof item !== 'object' ||
           typeof item.company !== 'string' || typeof item.position !== 'string' ||
@@ -155,22 +150,19 @@ router.post('/import', async (req: AuthRequest, res) => {
     const db = getDatabase();
     
     if (mode === 'overwrite') {
-      // Delete all existing data for this user
       db.prepare('DELETE FROM interviews WHERE user_id = ?').run(req.user!.userId);
     }
     
-    // Get existing IDs for deduplication
     const existingRows = db.prepare('SELECT id FROM interviews WHERE user_id = ?').all(req.user!.userId) as { id: string }[];
     const existingIds = new Set(existingRows.map(r => r.id));
     
     let importedCount = 0;
     const insertStmt = db.prepare(`
-      INSERT INTO interviews (id, user_id, company, position, stages, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO interviews (id, user_id, company, position, stages, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
     
     for (const item of imported) {
-      // Deduplicate by ID
       const newId = item.id || uuidv4();
       if (existingIds.has(newId)) continue;
       
@@ -181,6 +173,7 @@ router.post('/import', async (req: AuthRequest, res) => {
         item.company.trim(),
         item.position.trim(),
         JSON.stringify(item.stages),
+        item.status || 'active',
         item.createdAt || now,
         item.updatedAt || now
       );
@@ -197,7 +190,7 @@ router.post('/import', async (req: AuthRequest, res) => {
 });
 
 // PATCH /api/interviews/:id
-router.patch('/:id', async (req: AuthRequest, res) => {
+router.patch('/:id', (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { company: rawCompany, position: rawPosition } = req.body;
@@ -227,6 +220,7 @@ router.patch('/:id', async (req: AuthRequest, res) => {
       company,
       position,
       stages: JSON.parse(row.stages),
+      status: row.status,
       createdAt: row.created_at,
       updatedAt: now
     });
@@ -237,7 +231,7 @@ router.patch('/:id', async (req: AuthRequest, res) => {
 });
 
 // PATCH /api/interviews/:id/stage
-router.patch('/:id/stage', async (req: AuthRequest, res) => {
+router.patch('/:id/stage', (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const { stageIndex, status } = req.body;
@@ -265,7 +259,6 @@ router.patch('/:id/stage', async (req: AuthRequest, res) => {
     
     stages[stageIndex].status = status;
     
-    // Auto-advance on pass or skip
     if (status === 'pass' || status === 'skip') {
       const nextPending = stages.findIndex((s: any) => s.status === 'pending');
       if (nextPending !== -1) {
@@ -282,6 +275,7 @@ router.patch('/:id/stage', async (req: AuthRequest, res) => {
       company: row.company,
       position: row.position,
       stages,
+      status: row.status,
       createdAt: row.created_at,
       updatedAt: now
     });
@@ -292,7 +286,7 @@ router.patch('/:id/stage', async (req: AuthRequest, res) => {
 });
 
 // DELETE /api/interviews/:id
-router.delete('/:id', async (req: AuthRequest, res) => {
+router.delete('/:id', (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
     const db = getDatabase();
@@ -306,6 +300,68 @@ router.delete('/:id', async (req: AuthRequest, res) => {
   } catch (err) {
     console.error(`[DELETE /:id] 删除面试记录失败 (id=${req.params.id}):`, err);
     res.status(500).json({ error: '删除失败' });
+  }
+});
+
+// ========== 管理员 API ==========
+
+// GET /api/interviews/admin/all - 获取所有用户的面试记录
+router.get('/admin/all', adminMiddleware, (req: AuthRequest, res) => {
+  try {
+    const db = getDatabase();
+    const rows = db.prepare(`
+      SELECT i.*, u.username 
+      FROM interviews i 
+      JOIN users u ON i.user_id = u.id 
+      ORDER BY i.created_at DESC
+    `).all() as any[];
+    
+    const interviews = rows.map(row => ({
+      id: row.id,
+      userId: row.user_id,
+      username: row.username,
+      company: row.company,
+      position: row.position,
+      stages: JSON.parse(row.stages),
+      status: row.status,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    }));
+    
+    res.json(interviews);
+  } catch (err) {
+    console.error('[GET /admin/all] 读取数据失败:', err);
+    res.status(500).json({ error: '加载数据失败' });
+  }
+});
+
+// GET /api/interviews/admin/stats - 获取统计数据
+router.get('/admin/stats', adminMiddleware, (req: AuthRequest, res) => {
+  try {
+    const db = getDatabase();
+    
+    const totalUsers = db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number };
+    const totalInterviews = db.prepare('SELECT COUNT(*) as count FROM interviews').get() as { count: number };
+    const activeInterviews = db.prepare("SELECT COUNT(*) as count FROM interviews WHERE status = 'active'").get() as { count: number };
+    const archivedInterviews = db.prepare("SELECT COUNT(*) as count FROM interviews WHERE status = 'archived'").get() as { count: number };
+    
+    const recentUsers = db.prepare('SELECT COUNT(*) as count FROM users WHERE created_at >= datetime("now", "-7 days", "localtime")').get() as { count: number };
+    const recentInterviews = db.prepare('SELECT COUNT(*) as count FROM interviews WHERE created_at >= datetime("now", "-7 days", "localtime")').get() as { count: number };
+    
+    res.json({
+      success: true,
+      stats: {
+        totalUsers: totalUsers.count,
+        totalInterviews: totalInterviews.count,
+        activeInterviews: activeInterviews.count,
+        archivedInterviews: archivedInterviews.count,
+        recentUsers: recentUsers.count,
+        recentInterviews: recentInterviews.count
+      }
+    });
+  } catch (err) {
+    console.error('[GET /admin/stats] 获取统计数据失败:', err);
+    res.status(500).json({ error: '获取统计数据失败' });
   }
 });
 
