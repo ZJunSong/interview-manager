@@ -1,5 +1,5 @@
 # ============================================
-# Stage 1: Build frontend
+# Stage 1: Build frontend + compile server
 # ============================================
 FROM node:20 AS builder
 
@@ -19,6 +19,9 @@ COPY packages/web/ ./packages/web/
 WORKDIR /app/packages/web
 RUN pnpm run build:client
 
+# 编译服务端 TypeScript → JavaScript
+RUN npx tsc
+
 # ============================================
 # Stage 2: Production
 # ============================================
@@ -34,7 +37,10 @@ COPY packages/web/package.json ./packages/web/
 
 RUN pnpm install --prod --no-frozen-lockfile
 
+# 前端构建产物
 COPY --from=builder /app/packages/web/dist ./packages/web/dist
+# 服务端编译产物（JS）
+COPY --from=builder /app/packages/web/dist/server ./packages/web/dist/server
 COPY packages/web/server/ ./packages/web/server/
 COPY packages/web/tsconfig.json ./packages/web/
 COPY packages/shared/ ./packages/shared/
@@ -48,6 +54,4 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/healthz || exit 1
 
-RUN npm install -g ts-node typescript
-
-CMD ["ts-node", "server/index.ts"]
+CMD ["node", "dist/server/index.js"]
