@@ -3,6 +3,9 @@
 # ============================================
 FROM node:20-alpine AS builder
 
+# 安装编译 better-sqlite3 所需的依赖
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@9 --activate
