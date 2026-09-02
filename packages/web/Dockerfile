@@ -1,10 +1,7 @@
 # ============================================
 # Stage 1: Build frontend
 # ============================================
-FROM node:20-alpine AS builder
-
-# 安装编译 better-sqlite3 所需的依赖
-RUN apk add --no-cache python3 make g++
+FROM node:20 AS builder
 
 WORKDIR /app
 
@@ -25,10 +22,7 @@ RUN pnpm run build:client
 # ============================================
 # Stage 2: Production
 # ============================================
-FROM node:20-alpine
-
-# 安装编译 better-sqlite3 所需的依赖
-RUN apk add --no-cache python3 make g++
+FROM node:20
 
 WORKDIR /app
 
