@@ -20,7 +20,7 @@ WORKDIR /app/packages/web
 RUN pnpm run build:client
 
 # 编译服务端 TypeScript → JavaScript
-RUN npx tsc
+RUN npx tsc -p tsconfig.server.json
 
 # ============================================
 # Stage 2: Production
