@@ -14,17 +14,34 @@ export interface Stage {
 
 export interface Interview {
   id: string;
+  userId?: number;
+  username?: string;
   company: string;
   position: string;
   stages: Stage[];
+  status: 'active' | 'archived';
+  url?: string;
+  lastVisitedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
 
-export type ToastType = 'success' | 'error';
+export interface User {
+  id: number;
+  username: string;
+  role: 'user' | 'admin';
+  createdAt?: string;
+  interviewCount?: number;
+}
+
+export interface AuthResponse {
+  success: boolean;
+  token: string;
+  user: User;
+}
 
 export interface ToastMessage {
   id: number;
   text: string;
-  type: ToastType;
+  type: 'success' | 'error' | 'info';
 }

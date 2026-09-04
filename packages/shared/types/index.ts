@@ -17,6 +17,8 @@ export interface Interview {
   company: string;
   position: string;
   stages: Stage[];
+  url?: string;
+  lastVisitedAt?: string;
   createdAt: string;
   updatedAt: string;
 }

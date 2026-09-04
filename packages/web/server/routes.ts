@@ -47,6 +47,8 @@ router.get('/', (req: AuthRequest, res) => {
       position: row.position,
       stages: JSON.parse(row.stages),
       status: row.status,
+      url: row.url || undefined,
+      lastVisitedAt: row.last_visited_at || undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -70,6 +72,8 @@ router.get('/export', (req: AuthRequest, res) => {
       position: row.position,
       stages: JSON.parse(row.stages),
       status: row.status,
+      url: row.url || undefined,
+      lastVisitedAt: row.last_visited_at || undefined,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -86,9 +90,10 @@ router.get('/export', (req: AuthRequest, res) => {
 // POST /api/interviews
 router.post('/', (req: AuthRequest, res) => {
   try {
-    const { company: rawCompany, position: rawPosition } = req.body;
+    const { company: rawCompany, position: rawPosition, url: rawUrl } = req.body;
     const company = sanitize(rawCompany);
     const position = typeof rawPosition === 'string' ? rawPosition.trim() : '';
+    const url = typeof rawUrl === 'string' ? rawUrl.trim() : '';
     
     if (!company) {
       return res.status(400).json({ error: '公司名称不能为空或超过100字符' });
@@ -106,9 +111,9 @@ router.post('/', (req: AuthRequest, res) => {
     
     const db = getDatabase();
     db.prepare(`
-      INSERT INTO interviews (id, user_id, company, position, stages, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(id, req.user!.userId, company, position, JSON.stringify(stages), 'active', now, now);
+      INSERT INTO interviews (id, user_id, company, position, stages, status, url, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(id, req.user!.userId, company, position, JSON.stringify(stages), 'active', url || null, now, now);
     
     res.status(201).json({
       id,
@@ -116,6 +121,7 @@ router.post('/', (req: AuthRequest, res) => {
       position,
       stages,
       status: 'active',
+      url: url || undefined,
       createdAt: now,
       updatedAt: now
     });
@@ -193,9 +199,10 @@ router.post('/import', (req: AuthRequest, res) => {
 router.patch('/:id', (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
-    const { company: rawCompany, position: rawPosition } = req.body;
+    const { company: rawCompany, position: rawPosition, url: rawUrl } = req.body;
     const company = sanitize(rawCompany);
     const position = typeof rawPosition === 'string' ? rawPosition.trim() : '';
+    const url = typeof rawUrl === 'string' ? rawUrl.trim() : '';
     
     if (!company) {
       return res.status(400).json({ error: '公司名称不能为空或超过100字符' });
@@ -212,8 +219,8 @@ router.patch('/:id', (req: AuthRequest, res) => {
     }
     
     const now = new Date().toISOString();
-    db.prepare('UPDATE interviews SET company = ?, position = ?, updated_at = ? WHERE id = ? AND user_id = ?')
-      .run(company, position, now, id, req.user!.userId);
+    db.prepare('UPDATE interviews SET company = ?, position = ?, url = ?, updated_at = ? WHERE id = ? AND user_id = ?')
+      .run(company, position, url || null, now, id, req.user!.userId);
     
     res.json({
       id,
@@ -221,6 +228,8 @@ router.patch('/:id', (req: AuthRequest, res) => {
       position,
       stages: JSON.parse(row.stages),
       status: row.status,
+      url: url || undefined,
+      lastVisitedAt: row.last_visited_at || undefined,
       createdAt: row.created_at,
       updatedAt: now
     });
@@ -282,6 +291,31 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
   } catch (err) {
     console.error(`[PATCH /:id/stage] 更新阶段失败 (id=${req.params.id}):`, err);
     res.status(500).json({ error: '更新失败' });
+  }
+});
+
+// POST /api/interviews/:id/visit - 记录访问时间
+router.post('/:id/visit', (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const db = getDatabase();
+    const row = db.prepare('SELECT * FROM interviews WHERE id = ? AND user_id = ?').get(id, req.user!.userId) as any;
+    
+    if (!row) {
+      return res.status(404).json({ error: '未找到该面试记录' });
+    }
+    
+    const now = new Date().toISOString();
+    db.prepare('UPDATE interviews SET last_visited_at = ? WHERE id = ? AND user_id = ?')
+      .run(now, id, req.user!.userId);
+    
+    res.json({
+      id,
+      lastVisitedAt: now
+    });
+  } catch (err) {
+    console.error(`[POST /:id/visit] 记录访问时间失败 (id=${req.params.id}):`, err);
+    res.status(500).json({ error: '记录访问时间失败' });
   }
 });
 

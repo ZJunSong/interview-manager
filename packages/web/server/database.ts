@@ -43,6 +43,19 @@ export async function initDatabase(): Promise<void> {
     CREATE INDEX IF NOT EXISTS idx_interviews_status ON interviews(status);
   `);
   
+  // 数据库迁移：添加 url 和 last_visited_at 列（如果不存在）
+  const columns = db.prepare("PRAGMA table_info(interviews)").all() as { name: string }[];
+  const columnNames = columns.map(c => c.name);
+  
+  if (!columnNames.includes('url')) {
+    db.exec("ALTER TABLE interviews ADD COLUMN url TEXT");
+    console.log('[Database] 已添加 url 列');
+  }
+  if (!columnNames.includes('last_visited_at')) {
+    db.exec("ALTER TABLE interviews ADD COLUMN last_visited_at TEXT");
+    console.log('[Database] 已添加 last_visited_at 列');
+  }
+  
   // 创建默认管理员账号（如果不存在）
   const admin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');
   if (!admin) {
