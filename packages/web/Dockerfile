@@ -17,8 +17,8 @@ COPY packages/shared/ ./packages/shared/
 COPY packages/web/ ./packages/web/
 
 WORKDIR /app/packages/web
-# 清除 Vite 缓存，确保重新构建
-RUN rm -rf node_modules/.vite
+# 清除旧构建产物和缓存，确保完全重新构建
+RUN rm -rf dist node_modules/.vite
 RUN pnpm run build:client
 
 # 编译服务端 TypeScript → JavaScript
