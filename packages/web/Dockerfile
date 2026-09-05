@@ -17,9 +17,13 @@ COPY packages/shared/ ./packages/shared/
 COPY packages/web/ ./packages/web/
 
 WORKDIR /app/packages/web
+# 验证源码是否正确复制
+RUN grep -c "lastVisitedAt" src/views/Dashboard.vue || echo "WARNING: source not updated"
 # 清除旧构建产物和缓存，确保完全重新构建
 RUN rm -rf dist node_modules/.vite
 RUN pnpm run build:client
+# 验证构建产物
+RUN grep -c "lastVisitedAt" dist/assets/*.js || echo "WARNING: build output not updated"
 
 # 编译服务端 TypeScript → JavaScript
 RUN npx tsc -p tsconfig.server.json
