@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { JWT_SECRET } from './auth';
+import { JWT_SECRET } from './config';
+import { getDatabase } from './database';
 
 export interface AuthRequest extends Request {
   user?: {
@@ -22,6 +23,15 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as { userId: number; username: string; role: string };
+
+    // 校验用户仍然存在：用户被删除后，其签发的 JWT 在过期前依然合法，
+    // 若不拦截会产生 user_id 悬空的孤儿数据
+    const exists = getDatabase().prepare('SELECT 1 FROM users WHERE id = ?').get(decoded.userId);
+    if (!exists) {
+      res.status(401).json({ error: '用户不存在或已被删除' });
+      return;
+    }
+
     req.user = {
       userId: decoded.userId,
       username: decoded.username,

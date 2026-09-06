@@ -38,6 +38,7 @@ data/
 
 # TypeScript
 *.tsbuildinfo
+tmp-tsc/
 
 # Claude
 .claude/

@@ -3,10 +3,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { getDatabase } from './database';
 import { authMiddleware, adminMiddleware, AuthRequest } from './middleware';
+import { JWT_SECRET } from './config';
 
 const router = Router();
 
-export const JWT_SECRET = process.env.JWT_SECRET || 'interview-manager-secret-key-change-in-production';
 const JWT_EXPIRES_IN = '7d';
 
 // POST /api/auth/register

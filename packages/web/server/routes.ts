@@ -151,6 +151,10 @@ router.post('/import', (req: AuthRequest, res) => {
           return res.status(400).json({ error: '导入数据包含无效的阶段状态' });
         }
       }
+      // status 必须合法，否则数据库 CHECK 约束会使其抛 500
+      if (item.status !== undefined && !['active', 'archived'].includes(item.status)) {
+        return res.status(400).json({ error: '导入数据包含无效的记录状态' });
+      }
     }
     
     const db = getDatabase();
