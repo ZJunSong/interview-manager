@@ -1,7 +1,8 @@
 # ============================================
 # 阶段 1：安装依赖 + 构建前端 + 编译服务端
+# 基础镜像用 node:22：pnpm 11 要求 Node.js ≥ 22.13（依赖内置 node:sqlite 模块）
 # ============================================
-FROM node:20 AS builder
+FROM node:22 AS builder
 
 WORKDIR /app
 
@@ -32,7 +33,7 @@ RUN test -f dist/index.html && test -f dist/server/index.js
 # ============================================
 # 阶段 2：生产镜像
 # ============================================
-FROM node:20
+FROM node:22
 
 WORKDIR /app
 
