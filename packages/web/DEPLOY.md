@@ -105,14 +105,14 @@ docker compose up -d --build
 
 ## 数据备份
 
-数据存储在 Docker volume 中，备份命令：
+数据存储在 Docker volume 中（默认卷名 `web_app-data`，可用 `docker volume ls` 查看），备份命令：
 
 ```bash
 # 备份
-docker run --rm -v interview-manager-app-data:/data -v $(pwd):/backup alpine tar czf /backup/backup.tar.gz /data
+docker run --rm -v web_app-data:/data -v $(pwd):/backup alpine tar czf /backup/app-data-backup.tar.gz -C /data .
 
 # 恢复
-docker run --rm -v interview-manager-app-data:/data -v $(pwd):/backup alpine tar xzf /backup/backup.tar.gz -C /
+docker run --rm -v web_app-data:/data -v $(pwd):/backup alpine tar xzf /backup/app-data-backup.tar.gz -C /data
 ```
 
 ---

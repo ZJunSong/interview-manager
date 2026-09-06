@@ -51,6 +51,11 @@ COPY packages/shared/ ./packages/shared/
 # 数据目录归属 node 用户，容器以非 root 运行
 RUN mkdir -p /app/data && chown -R node:node /app/data
 
+# 入口脚本：以 root 启动自动修正数据目录属主，再降权为 node 运行服务进程
+# （postgres/redis 官方镜像同款模式，杜绝数据卷属主不匹配导致的启动失败）
+COPY packages/web/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh && which setpriv
+
 WORKDIR /app/packages/web
 
 EXPOSE 3001
@@ -58,6 +63,6 @@ EXPOSE 3001
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:3001/healthz || exit 1
 
-USER node
+ENTRYPOINT ["docker-entrypoint.sh"]
 
 CMD ["node", "dist/server/index.js"]
