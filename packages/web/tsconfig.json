@@ -2,11 +2,18 @@
   "compilerOptions": {
     "target": "ES2022",
     "module": "commonjs",
+    "lib": ["ES2022"],
     "strict": true,
     "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
     "outDir": "./dist",
-    "skipLibCheck": true
+    "moduleResolution": "node"
   },
-  "include": ["server/**/*.ts", "src/**/*.ts"]
+  "include": ["server/**/*.ts"],
+  "exclude": ["node_modules", "dist"]
 }
