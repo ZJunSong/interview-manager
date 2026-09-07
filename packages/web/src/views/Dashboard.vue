@@ -316,6 +316,8 @@ async function handleDelete() {
 }
 
 function openStageMenu(interviewId: string, stageIndex: number, event: MouseEvent) {
+  // 阻止冒泡：否则同一点击会立即传到 document 上的关闭监听，菜单开了又关，表现为点击无效
+  event.stopPropagation();
   stageMenu.value = {
     visible: true,
     x: event.clientX,
