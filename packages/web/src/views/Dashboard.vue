@@ -318,10 +318,15 @@ async function handleDelete() {
 function openStageMenu(interviewId: string, stageIndex: number, event: MouseEvent) {
   // 阻止冒泡：否则同一点击会立即传到 document 上的关闭监听，菜单开了又关，表现为点击无效
   event.stopPropagation();
+  // 菜单约 170×110px：靠近视口底部时向上弹出，靠近右缘时向左弹出，避免被裁剪
+  const MENU_H = 170;
+  const MENU_W = 110;
+  const flipUp = event.clientY + MENU_H > window.innerHeight;
+  const flipLeft = event.clientX + MENU_W > window.innerWidth;
   stageMenu.value = {
     visible: true,
-    x: event.clientX,
-    y: event.clientY,
+    x: flipLeft ? event.clientX - MENU_W : event.clientX,
+    y: flipUp ? event.clientY - MENU_H : event.clientY,
     interviewId,
     stageIndex
   };
@@ -334,7 +339,8 @@ async function updateStageStatus(status: string) {
   try {
     const updated = await updateStage(interviewId, stageIndex, status);
     const idx = interviews.value.findIndex(i => i.id === interviewId);
-    if (idx !== -1) interviews.value[idx] = updated;
+    // 字段合并而非整体替换：接口未返回的字段（如 url）保留原值，避免跳转链接失效
+    if (idx !== -1) interviews.value[idx] = { ...interviews.value[idx], ...updated };
     showToast('状态已更新');
   } catch {
     showToast('更新失败', 'error');

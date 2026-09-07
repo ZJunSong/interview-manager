@@ -289,6 +289,8 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
       position: row.position,
       stages,
       status: row.status,
+      url: row.url || undefined,
+      lastVisitedAt: row.last_visited_at || undefined,
       createdAt: row.created_at,
       updatedAt: now
     });
