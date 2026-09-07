@@ -2,6 +2,13 @@
   <div class="dashboard">
     <header class="header">
       <div class="header-left">
+        <span class="logo-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="7" fill="#2563eb"/>
+            <circle cx="16" cy="13" r="5" stroke="#fff" stroke-width="2"/>
+            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
         <h1 class="logo">面试记录管理器</h1>
       </div>
       <div class="header-right">
@@ -10,10 +17,14 @@
         <button class="logout-btn" @click="handleLogout">退出</button>
       </div>
     </header>
-    
+
     <main class="main">
       <div class="toolbar">
         <div class="search-box">
+          <svg class="search-icon" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="1.5"/>
+            <line x1="11" y1="11" x2="14.5" y2="14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
           <input v-model="searchQuery" type="text" placeholder="搜索公司或职位..." />
         </div>
         <div class="toolbar-actions">
@@ -32,16 +43,16 @@
           </label>
         </div>
       </div>
-      
+
       <StatsPanel v-if="interviews.length > 0" :interviews="interviews" />
-      
+
       <div v-if="loading" class="loading">加载中...</div>
-      
-      <div v-else-if="filteredInterviews.length === 0" class="empty">
-        <p v-if="searchQuery">没有找到匹配的记录</p>
-        <p v-else>还没有面试记录，点击"添加面试"开始</p>
-      </div>
-      
+
+      <EmptyState
+        v-else-if="filteredInterviews.length === 0"
+        :is-search="!!searchQuery"
+      />
+
       <div v-else class="card-list">
         <div v-for="item in filteredInterviews" :key="item.id" class="card" :class="getVisitStatusClass(item)">
           <div class="card-header">
@@ -51,14 +62,15 @@
                 <span v-if="item.url" class="url-icon" title="点击访问招聘页面">↗</span>
               </h2>
               <span class="card-position">{{ item.position }}</span>
+              <span class="card-date">{{ (item.createdAt || '').slice(0, 10) }} 投递</span>
             </div>
             <div class="card-actions">
               <button class="btn-icon" @click="editInterview(item)">编辑</button>
               <button class="btn-icon btn-danger" @click="confirmDelete(item)">删除</button>
             </div>
           </div>
-          
-          <div class="card-timeline">
+
+          <div class="card-timeline scrollbar-thin">
             <div
               v-for="(stage, i) in item.stages"
               :key="i"
@@ -73,7 +85,7 @@
         </div>
       </div>
     </main>
-    
+
     <div v-if="showAddModal" class="modal-overlay" @click.self="showAddModal = false">
       <div class="modal">
         <h3>添加面试记录</h3>
@@ -97,7 +109,7 @@
         </form>
       </div>
     </div>
-    
+
     <div v-if="showEditModal" class="modal-overlay" @click.self="showEditModal = false">
       <div class="modal">
         <h3>编辑面试记录</h3>
@@ -121,7 +133,7 @@
         </form>
       </div>
     </div>
-    
+
     <div v-if="showDeleteDialog" class="modal-overlay" @click.self="showDeleteDialog = false">
       <div class="modal modal-small">
         <h3>确认删除</h3>
@@ -132,14 +144,14 @@
         </div>
       </div>
     </div>
-    
+
     <div v-if="stageMenu.visible" class="stage-menu" :style="{ top: stageMenu.y + 'px', left: stageMenu.x + 'px' }">
       <button @click="updateStageStatus('pass')">通过</button>
       <button @click="updateStageStatus('fail')">未通过</button>
       <button @click="updateStageStatus('rejected')">已拒绝</button>
       <button @click="updateStageStatus('skip')">跳过</button>
     </div>
-    
+
     <div v-if="toast.show" class="toast" :class="toast.type">{{ toast.message }}</div>
   </div>
 </template>
@@ -150,6 +162,7 @@ import { useRouter } from 'vue-router';
 import type { Interview } from '../types';
 import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, recordVisit } from '../api';
 import StatsPanel from '../components/StatsPanel.vue';
+import EmptyState from '../components/EmptyState.vue';
 
 const router = useRouter();
 const user = ref<any>(null);
@@ -179,18 +192,18 @@ function showToast(message: string, type: 'success' | 'error' = 'success') {
 const filteredInterviews = computed(() => {
   const q = searchQuery.value.trim().toLowerCase();
   let list = interviews.value;
-  
+
   if (q) {
     list = list.filter(i => i.company.toLowerCase().includes(q) || i.position.toLowerCase().includes(q));
   }
-  
+
   const sorted = [...list];
   switch (sortBy.value) {
     case 'newest': sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
     case 'oldest': sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); break;
     case 'company': sorted.sort((a, b) => a.company.localeCompare(b.company, 'zh-CN')); break;
     case 'progress': sorted.sort((a, b) => getProgress(b) - getProgress(a)); break;
-    case 'recentVisit': 
+    case 'recentVisit':
       sorted.sort((a, b) => {
         // 有访问记录的排在前面
         if (a.lastVisitedAt && b.lastVisitedAt) {
@@ -203,7 +216,7 @@ const filteredInterviews = computed(() => {
       });
       break;
   }
-  
+
   return sorted;
 });
 
@@ -213,11 +226,11 @@ function getProgress(item: Interview): number {
 
 function getVisitStatusClass(item: Interview): string {
   if (!item.lastVisitedAt || !item.url) return '';
-  
+
   const lastVisit = new Date(item.lastVisitedAt).getTime();
   const now = Date.now();
   const hoursSinceVisit = (now - lastVisit) / (1000 * 60 * 60);
-  
+
   if (hoursSinceVisit < 4) return 'visit-fresh';
   if (hoursSinceVisit < 8) return 'visit-normal';
   if (hoursSinceVisit < 12) return 'visit-warning';
@@ -226,11 +239,11 @@ function getVisitStatusClass(item: Interview): string {
 
 function getVisitStatusLabel(item: Interview): string {
   if (!item.lastVisitedAt || !item.url) return '';
-  
+
   const lastVisit = new Date(item.lastVisitedAt).getTime();
   const now = Date.now();
   const hoursSinceVisit = (now - lastVisit) / (1000 * 60 * 60);
-  
+
   if (hoursSinceVisit < 1) return '刚刚访问';
   if (hoursSinceVisit < 4) return `${Math.floor(hoursSinceVisit)}小时前访问`;
   if (hoursSinceVisit < 24) return `${Math.floor(hoursSinceVisit)}小时前访问`;
@@ -315,7 +328,7 @@ function openStageMenu(interviewId: string, stageIndex: number, event: MouseEven
 async function updateStageStatus(status: string) {
   const { interviewId, stageIndex } = stageMenu.value;
   stageMenu.value.visible = false;
-  
+
   try {
     const updated = await updateStage(interviewId, stageIndex, status);
     const idx = interviews.value.findIndex(i => i.id === interviewId);
@@ -345,7 +358,7 @@ async function handleExport() {
 async function handleImport(event: Event) {
   const input = event.target as HTMLInputElement;
   if (!input.files?.length) return;
-  
+
   try {
     const text = await input.files[0].text();
     const data = JSON.parse(text);
@@ -359,7 +372,7 @@ async function handleImport(event: Event) {
   } catch {
     showToast('导入失败', 'error');
   }
-  
+
   input.value = '';
 }
 
@@ -369,10 +382,10 @@ function closeStageMenu() {
 
 async function handleVisit(item: Interview) {
   if (!item.url) return;
-  
+
   // 在新标签页打开链接
   window.open(item.url, '_blank');
-  
+
   // 记录访问时间
   try {
     const result = await recordVisit(item.id);
@@ -400,23 +413,41 @@ onUnmounted(() => {
 <style scoped>
 .dashboard {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--color-bg);
 }
 
+/* ===== 顶栏：毛玻璃吸顶 ===== */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 14px 24px;
+  background: var(--color-surface);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  display: inline-flex;
+  align-items: center;
 }
 
 .logo {
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
   margin: 0;
+  letter-spacing: -0.01em;
 }
 
 .header-right {
@@ -427,27 +458,34 @@ onUnmounted(() => {
 
 .user-info {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .admin-link {
   font-size: 13px;
-  color: #667eea;
+  color: var(--color-accent);
   text-decoration: none;
+  font-weight: 500;
+}
+
+.admin-link:hover {
+  text-decoration: underline;
 }
 
 .logout-btn {
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 13px;
-  color: #666;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  cursor: pointer;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .logout-btn:hover {
-  background: #f0f0f0;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .main {
@@ -456,6 +494,7 @@ onUnmounted(() => {
   padding: 24px;
 }
 
+/* ===== 工具栏 ===== */
 .toolbar {
   display: flex;
   justify-content: space-between;
@@ -465,17 +504,33 @@ onUnmounted(() => {
   flex-wrap: wrap;
 }
 
+.search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--color-text-tertiary);
+  pointer-events: none;
+}
+
 .search-box input {
-  padding: 10px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  padding: 10px 16px 10px 34px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
   font-size: 14px;
   width: 300px;
+  background: var(--color-surface-solid);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .search-box input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .toolbar-actions {
@@ -486,15 +541,16 @@ onUnmounted(() => {
 
 .sort-select {
   padding: 10px 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  background: white;
+  background: var(--color-surface-solid);
+  color: var(--color-text);
 }
 
 .btn {
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -502,69 +558,47 @@ onUnmounted(() => {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .btn-primary {
-  background: #667eea;
+  background: var(--color-accent);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #5a6fd6;
+  background: #1d4ed8;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
 }
 
 .btn-secondary {
-  background: white;
-  color: #666;
-  border: 1px solid #e0e0e0;
+  background: var(--color-surface-solid);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-strong);
 }
 
 .btn-secondary:hover {
-  background: #f5f5f5;
+  color: var(--color-text);
+  border-color: var(--color-text-tertiary);
 }
 
 .btn-danger {
-  background: #e53e3e;
+  background: var(--color-danger);
   color: white;
 }
 
 .btn-danger:hover {
-  background: #c53030;
+  background: #dc2626;
 }
 
-.btn-icon {
-  padding: 6px 12px;
-  font-size: 13px;
-  color: #666;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.btn-icon:hover {
-  background: #f0f0f0;
-}
-
-.btn-icon.btn-danger:hover {
-  color: #e53e3e;
-  background: #fff5f5;
-}
-
+/* ===== 空态与加载 ===== */
 .loading {
   text-align: center;
   padding: 60px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
-.empty {
-  text-align: center;
-  padding: 60px;
-  color: #999;
-  background: white;
-  border-radius: 12px;
-}
-
+/* ===== 卡片列表 ===== */
 .card-list {
   display: flex;
   flex-direction: column;
@@ -572,48 +606,48 @@ onUnmounted(() => {
 }
 
 .card {
-  background: white;
-  border-radius: 12px;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-md);
   padding: 20px 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: border-left 0.3s ease;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), border-left-color var(--duration-normal) var(--ease-out);
   border-left: 4px solid transparent;
 }
 
+.card:hover {
+  box-shadow: var(--shadow-card-hover);
+  transform: translateY(-2px);
+}
+
 /* 访问状态颜色标记 */
-.card.visit-fresh {
-  border-left-color: #38a169;
-}
+.card.visit-fresh { border-left-color: var(--color-success); }
 
-.card.visit-normal {
-  border-left-color: #ecc94b;
-}
+.card.visit-normal { border-left-color: #ecc94b; }
 
-.card.visit-warning {
-  border-left-color: #ed8936;
-}
+.card.visit-warning { border-left-color: #ed8936; }
 
-.card.visit-danger {
-  border-left-color: #e53e3e;
-}
+.card.visit-danger { border-left-color: var(--color-danger); }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
+  gap: 12px;
 }
 
 .card-info {
   display: flex;
   align-items: baseline;
   gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .card-company {
   font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
   margin: 0;
   display: flex;
   align-items: center;
@@ -622,7 +656,7 @@ onUnmounted(() => {
 
 .card-company.has-url {
   cursor: pointer;
-  color: #667eea;
+  color: var(--color-accent);
 }
 
 .card-company.has-url:hover {
@@ -640,23 +674,55 @@ onUnmounted(() => {
 
 .card-position {
   font-size: 13px;
-  color: #667eea;
-  background: rgba(102, 126, 234, 0.1);
-  padding: 2px 10px;
-  border-radius: 12px;
+  font-weight: 500;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  padding: 3px 12px;
+  border-radius: var(--radius-full);
+}
+
+.card-date {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
 }
 
 .card-actions {
   display: flex;
-  gap: 4px;
+  gap: 6px;
+  flex-shrink: 0;
 }
 
+.btn-icon {
+  padding: 6px 14px;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.btn-icon:hover {
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+  background: var(--color-bg);
+}
+
+.btn-icon.btn-danger:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+/* ===== 时间线：连接线 + 状态符号 + 当前阶段脉冲 ===== */
 .card-timeline {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 0;
   overflow-x: auto;
-  padding: 8px 0;
+  padding: 10px 0 4px;
 }
 
 .timeline-node {
@@ -667,70 +733,129 @@ onUnmounted(() => {
   position: relative;
 }
 
+/* 节点之间的连接线：本节点已通过则用绿色，表示流程已推进 */
+.timeline-node:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: calc(50% + 10px);
+  right: calc(-50% + 10px);
+  height: 2px;
+  background: var(--color-connector);
+  border-radius: 1px;
+}
+
+.timeline-node.status-pass:not(:last-child)::before {
+  background: var(--color-connector-pass);
+}
+
 .timeline-node.clickable {
   cursor: pointer;
 }
 
-.timeline-node.clickable:hover .node-dot {
-  transform: scale(1.3);
-}
-
 .node-dot {
-  width: 12px;
-  height: 12px;
+  position: relative;
+  z-index: 1;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: #e0e0e0;
-  margin-bottom: 6px;
-  transition: transform 0.2s;
+  background: var(--color-surface-solid);
+  border: 2px solid var(--color-pending-border);
+  margin-bottom: 8px;
+  transition: transform var(--duration-fast) var(--ease-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
 }
 
-.node-label {
-  font-size: 11px;
-  color: #999;
-  text-align: center;
+.timeline-node.clickable:hover .node-dot {
+  transform: scale(1.2);
 }
 
-.status-current .node-dot {
-  background: #667eea;
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
-}
-
-.status-current .node-label {
-  color: #667eea;
-  font-weight: 600;
+/* 阶段状态符号 */
+.node-dot::after {
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: white;
 }
 
 .status-pass .node-dot {
-  background: #38a169;
+  background: var(--color-success);
+  border-color: var(--color-success);
 }
 
-.status-pass .node-label {
-  color: #38a169;
+.status-pass .node-dot::after {
+  content: '✓';
 }
 
 .status-fail .node-dot {
-  background: #e53e3e;
+  background: var(--color-danger);
+  border-color: var(--color-danger);
 }
 
-.status-fail .node-label {
-  color: #e53e3e;
+.status-fail .node-dot::after {
+  content: '✗';
 }
 
 .status-rejected .node-dot {
-  background: #999;
+  background: var(--color-gray);
+  border-color: var(--color-gray);
+}
+
+.status-rejected .node-dot::after {
+  content: '×';
 }
 
 .status-skip .node-dot {
-  background: #cbd5e0;
+  background: var(--color-gray-soft);
+  border-color: var(--color-border-strong);
 }
 
+/* 当前阶段：主题色实心 + 脉冲光圈 */
+.status-current .node-dot {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  animation: pulse-ring 2s var(--ease-out) infinite;
+}
+
+.timeline-node.clickable:hover .node-dot {
+  animation-play-state: paused;
+}
+
+.node-label {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.status-current .node-label {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.status-pass .node-label {
+  color: var(--color-success);
+}
+
+.status-fail .node-label {
+  color: var(--color-danger);
+}
+
+.status-rejected .node-label {
+  color: var(--color-text-tertiary);
+}
+
+/* ===== 弹窗 ===== */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--backdrop-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -738,21 +863,23 @@ onUnmounted(() => {
 }
 
 .modal {
-  background: white;
-  border-radius: 12px;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
   padding: 24px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--shadow-modal);
+  animation: scale-in var(--duration-normal) var(--ease-out);
 }
 
 .modal h3 {
   margin: 0 0 20px 0;
   font-size: 18px;
+  color: var(--color-text);
 }
 
 .modal-small p {
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 14px;
   margin: 0 0 20px 0;
 }
@@ -766,21 +893,29 @@ onUnmounted(() => {
   font-size: 14px;
   font-weight: 500;
   margin-bottom: 6px;
+  color: var(--color-text);
 }
 
 .modal .form-group .optional {
   font-weight: 400;
-  color: #999;
+  color: var(--color-text-tertiary);
   font-size: 12px;
 }
 
 .modal .form-group input {
   width: 100%;
   padding: 10px 12px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
   font-size: 14px;
   box-sizing: border-box;
+  background: var(--color-surface-solid);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.modal .form-group input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .modal-actions {
@@ -790,13 +925,15 @@ onUnmounted(() => {
   margin-top: 20px;
 }
 
+/* ===== 阶段操作菜单 ===== */
 .stage-menu {
   position: fixed;
-  background: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-popover);
   z-index: 1000;
   overflow: hidden;
+  animation: scale-in var(--duration-fast) var(--ease-out);
 }
 
 .stage-menu button {
@@ -807,40 +944,39 @@ onUnmounted(() => {
   border: none;
   background: none;
   font-size: 14px;
+  color: var(--color-text);
   cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .stage-menu button:hover {
-  background: #f5f5f5;
+  background: var(--color-bg);
 }
 
+/* ===== 轻提示 ===== */
 .toast {
   position: fixed;
   bottom: 24px;
   right: 24px;
   padding: 12px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   color: white;
   z-index: 2000;
-  animation: slideIn 0.3s ease;
+  animation: slide-up var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-popover);
 }
 
 .toast.success {
-  background: #38a169;
+  background: var(--color-success);
 }
 
 .toast.error {
-  background: #e53e3e;
+  background: var(--color-danger);
 }
 
 .toast.info {
-  background: #667eea;
-}
-
-@keyframes slideIn {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  background: var(--color-accent);
 }
 
 @media (max-width: 600px) {
@@ -848,17 +984,22 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .search-box input {
     width: 100%;
   }
-  
+
   .toolbar-actions {
     flex-wrap: wrap;
   }
-  
+
   .card-timeline {
     overflow-x: auto;
+  }
+
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
 </style>
