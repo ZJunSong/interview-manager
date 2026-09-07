@@ -64,9 +64,18 @@
               <span class="card-position">{{ item.position }}</span>
               <span class="card-date">{{ (item.createdAt || '').slice(0, 10) }} 投递</span>
             </div>
-            <div class="card-actions">
-              <button class="btn-icon" @click="editInterview(item)">编辑</button>
-              <button class="btn-icon btn-danger" @click="confirmDelete(item)">删除</button>
+            <div class="card-right">
+              <span
+                v-if="item.url"
+                class="visit-badge"
+                :class="item.lastVisitedAt ? getVisitStatusClass(item) : 'visit-never'"
+              >
+                <span class="visit-dot"></span>{{ item.lastVisitedAt ? getVisitStatusLabel(item) : '未访问' }}
+              </span>
+              <div class="card-actions">
+                <button class="btn-icon" @click="editInterview(item)">编辑</button>
+                <button class="btn-icon btn-danger" @click="confirmDelete(item)">删除</button>
+              </div>
             </div>
           </div>
 
@@ -169,7 +178,8 @@ const user = ref<any>(null);
 const loading = ref(true);
 const interviews = ref<Interview[]>([]);
 const searchQuery = ref('');
-const sortBy = ref('newest');
+// 默认按进度排序：每次打开页面都以此为初始排序
+const sortBy = ref('progress');
 
 const showAddModal = ref(false);
 const showEditModal = ref(false);
@@ -699,6 +709,58 @@ onUnmounted(() => {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+}
+
+/* ===== 访问新鲜度标记（右侧标签）：提醒及时访问检查进度 ===== */
+.card-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.visit-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.visit-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.visit-badge.visit-fresh {
+  color: var(--color-success);
+  background: var(--color-success-soft);
+}
+
+.visit-badge.visit-normal {
+  color: #b7791f;
+  background: rgba(236, 201, 75, 0.15);
+}
+
+.visit-badge.visit-warning {
+  color: #c05621;
+  background: rgba(237, 136, 54, 0.12);
+}
+
+.visit-badge.visit-danger {
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
+}
+
+.visit-badge.visit-never {
+  color: var(--color-text-tertiary);
+  background: var(--color-gray-soft);
 }
 
 .btn-icon {
