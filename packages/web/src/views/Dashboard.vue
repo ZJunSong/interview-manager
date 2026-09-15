@@ -86,7 +86,10 @@
 
           <div v-for="item in group.items" :key="item.id" class="position-row">
             <div class="position-meta">
-              <span class="card-position">{{ item.position }}</span>
+              <div class="position-line">
+                <span class="card-position">{{ item.position }}</span>
+                <span v-if="isInterviewTerminated(item)" class="dead-badge">已挂</span>
+              </div>
               <span class="card-date">{{ (item.createdAt || '').slice(0, 10) }}</span>
             </div>
 
@@ -187,7 +190,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Interview } from '../types';
 import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, visitCompany } from '../api';
-import { filterInterviews, groupByCompany, sortGroups, type CompanyGroup, type SortMode } from '../utils/grouping';
+import { filterInterviews, groupByCompany, sortGroups, isInterviewTerminated, type CompanyGroup, type SortMode } from '../utils/grouping';
 import StatsPanel from '../components/StatsPanel.vue';
 import EmptyState from '../components/EmptyState.vue';
 
@@ -759,6 +762,24 @@ onUnmounted(() => {
   gap: 3px;
   min-width: 120px;
   flex-shrink: 0;
+}
+
+.position-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dead-badge {
+  flex-shrink: 0;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .card-position {
