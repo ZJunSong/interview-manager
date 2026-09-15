@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { filterInterviews, groupByCompany, sortGroups } from '../src/utils/grouping';
+import { filterInterviews, groupByCompany, sortGroups, isGroupTerminated } from '../src/utils/grouping';
 import type { Interview } from '../src/types';
 
 function makeStages(passed: number, currentAt: number): Interview['stages'] {
@@ -192,6 +192,20 @@ describe('已挂记录：公司聚合口径', () => {
       makeItem({ id: '3', company: '腾讯', position: '进度高', createdAt: '2026-09-03', stages: makeStages(2, 2) })
     ]);
     expect(groups[0].items.map(i => i.id)).toEqual(['3', '2', '1']);
+  });
+
+  it('isGroupTerminated：全部岗位挂了为 true，仍有活岗位为 false', () => {
+    const allDead = groupByCompany([
+      makeItem({ id: '1', company: '腾讯', position: 'a', stages: failedStages(2) }),
+      makeItem({ id: '2', company: '腾讯', position: 'b', stages: failedStages(4) })
+    ]);
+    expect(isGroupTerminated(allDead[0])).toBe(true);
+
+    const hasAlive = groupByCompany([
+      makeItem({ id: '1', company: '字节', position: 'a', stages: failedStages(2) }),
+      makeItem({ id: '2', company: '字节', position: 'b', stages: makeStages(1, 1) })
+    ]);
+    expect(isGroupTerminated(hasAlive[0])).toBe(false);
   });
 });
 

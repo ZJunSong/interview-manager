@@ -133,9 +133,14 @@ function applySort(groups: CompanyGroup[], sortBy: SortMode): CompanyGroup[] {
   return sorted;
 }
 
+/** 公司是否已全部终结（所有岗位都挂了）：不展示访问提醒，排序固定沉底 */
+export function isGroupTerminated(group: CompanyGroup): boolean {
+  return group.items.length > 0 && group.items.every(isInterviewTerminated);
+}
+
 /** 公司维度排序：全部岗位都已终结的公司不参与排序，固定排在最后（组内保持所选策略的相对顺序） */
 export function sortGroups(groups: CompanyGroup[], sortBy: SortMode): CompanyGroup[] {
-  const alive = groups.filter(g => g.items.length > 0 && g.items.some(i => !isInterviewTerminated(i)));
-  const dead = groups.filter(g => !(g.items.length > 0 && g.items.some(i => !isInterviewTerminated(i))));
+  const alive = groups.filter(g => !isGroupTerminated(g));
+  const dead = groups.filter(g => isGroupTerminated(g));
   return [...applySort(alive, sortBy), ...applySort(dead, sortBy)];
 }

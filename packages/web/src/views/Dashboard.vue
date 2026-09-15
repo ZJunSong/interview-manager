@@ -75,7 +75,7 @@
             </div>
             <div class="card-right">
               <span
-                v-if="group.url"
+                v-if="group.url && !isGroupTerminated(group)"
                 class="visit-badge"
                 :class="group.latestVisit ? getVisitStatusClass(group.latestVisit) : 'visit-never'"
               >
@@ -190,7 +190,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Interview } from '../types';
 import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, visitCompany } from '../api';
-import { filterInterviews, groupByCompany, sortGroups, isInterviewTerminated, type CompanyGroup, type SortMode } from '../utils/grouping';
+import { filterInterviews, groupByCompany, sortGroups, isInterviewTerminated, isGroupTerminated, type CompanyGroup, type SortMode } from '../utils/grouping';
 import StatsPanel from '../components/StatsPanel.vue';
 import EmptyState from '../components/EmptyState.vue';
 
