@@ -104,9 +104,10 @@ router.post('/', (req: AuthRequest, res) => {
     
     const now = new Date().toISOString();
     const id = uuidv4();
+    // 投递无门槛：创建即视为投递已通过，第二阶段（测评）为当前进行中的阶段
     const stages = STAGE_NAMES.map((name, i) => ({
       name,
-      status: (i === 0 ? 'current' : 'pending')
+      status: (i === 0 ? 'pass' : i === 1 ? 'current' : 'pending')
     }));
     
     const db = getDatabase();

@@ -138,10 +138,12 @@ describe('面试记录 CRUD', () => {
     token = await registerAndLogin('carol');
   });
 
-  it('创建记录：首阶段为 current，url 持久化', async () => {
+  it('创建记录：投递自动通过、测评进行中，url 持久化', async () => {
     const item = await createInterview(token, '腾讯', 'pcg qq', 'https://careers.tencent.com/1');
     expect(item.id).toBeTruthy();
-    expect(item.stages[0].status).toBe('current');
+    expect(item.stages[0].status).toBe('pass');
+    expect(item.stages[1].status).toBe('current');
+    expect(item.stages[2].status).toBe('pending');
     expect(item.stages).toHaveLength(10);
     expect(item.url).toBe('https://careers.tencent.com/1');
   });
@@ -175,15 +177,16 @@ describe('面试记录 CRUD', () => {
       body: JSON.stringify({ company: '腾讯', position: '微信前端', url: 'https://careers.tencent.com/1' })
     });
 
+    // 创建后投递已自动通过，当前阶段为测评（索引 1）
     const res = await fetch(`${baseURL}/api/interviews/${list[0].id}/stage`, {
       method: 'PATCH',
       headers: auth(token),
-      body: JSON.stringify({ stageIndex: 0, status: 'pass' })
+      body: JSON.stringify({ stageIndex: 1, status: 'pass' })
     });
     expect(res.status).toBe(200);
     const body = await res.json();
-    expect(body.stages[0].status).toBe('pass');
-    expect(body.stages[1].status).toBe('current');
+    expect(body.stages[1].status).toBe('pass');
+    expect(body.stages[2].status).toBe('current');
     expect(body.url).toBe('https://careers.tencent.com/1');
     expect(body.lastVisitedAt).toBeUndefined();
   });

@@ -59,6 +59,7 @@
           :key="group.company"
           class="card"
           :class="getVisitStatusClass(group.latestVisit)"
+          :data-company="group.company"
         >
           <div class="card-header">
             <div class="card-info">
@@ -186,7 +187,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Interview } from '../types';
 import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, visitCompany } from '../api';
@@ -223,8 +224,34 @@ function showToast(message: string, type: 'success' | 'error' = 'success') {
 // 搜索过滤（记录级：命中公司名或职位名的记录才会出现在卡片里）
 const filteredInterviews = computed(() => filterInterviews(interviews.value, searchQuery.value));
 
-// 公司聚合 + 公司维度排序：同公司多岗位归并为一个卡片
-const companyGroups = computed(() => sortGroups(groupByCompany(filteredInterviews.value), sortBy.value));
+// 公司显示顺序快照：只在页面加载/切换排序/添加与编辑记录时重算。
+// 修改阶段状态不重算顺序，防止卡片突然跳动（页面刷新后按最新进度重新排序）
+const orderedKeys = ref<string[]>([]);
+
+function recomputeOrder() {
+  orderedKeys.value = sortGroups(groupByCompany(interviews.value), sortBy.value).map(g => g.company);
+}
+
+watch(sortBy, recomputeOrder);
+
+// 公司聚合：顺序取自快照，新出现的公司排在末尾兜底；卡片组内顺序实时（挂了的岗位沉到卡片底部）
+const companyGroups = computed(() => {
+  const groups = groupByCompany(filteredInterviews.value);
+  const rank = new Map(orderedKeys.value.map((c, i) => [c, i]));
+  return groups.sort((a, b) => {
+    const ra = rank.get(a.company) ?? Number.MAX_SAFE_INTEGER;
+    const rb = rank.get(b.company) ?? Number.MAX_SAFE_INTEGER;
+    return ra - rb || (a.company < b.company ? -1 : 1);
+  });
+});
+
+// 滚动到指定公司的卡片（添加/编辑后定位，免去手动滑动）
+function scrollToCompany(company: string) {
+  nextTick(() => {
+    document.querySelector(`[data-company="${CSS.escape(company)}"]`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  });
+}
 
 function getVisitStatusClass(lastVisitedAt?: string): string {
   if (!lastVisitedAt) return '';
@@ -259,6 +286,7 @@ async function loadData() {
   try {
     loading.value = true;
     interviews.value = await fetchInterviews();
+    recomputeOrder();
   } catch {
     showToast('加载数据失败', 'error');
   } finally {
@@ -267,11 +295,15 @@ async function loadData() {
 }
 
 async function handleAdd() {
+  const company = addForm.value.company.trim();
   try {
     const newInterview = await createInterview(addForm.value.company, addForm.value.position, addForm.value.url || undefined);
     interviews.value.unshift(newInterview);
     showAddModal.value = false;
     addForm.value = { company: '', position: '', url: '' };
+    // 新公司进入排序快照并滚动定位到它的卡片
+    recomputeOrder();
+    scrollToCompany(company);
     showToast('添加成功');
   } catch {
     showToast('添加失败', 'error');
@@ -291,6 +323,9 @@ async function handleEdit() {
     const idx = interviews.value.findIndex(i => i.id === updated.id);
     if (idx !== -1) interviews.value[idx] = updated;
     showEditModal.value = false;
+    // 公司名可能被修改，重算顺序并定位到所属卡片
+    recomputeOrder();
+    scrollToCompany(updated.company);
     showToast('修改成功');
   } catch {
     showToast('修改失败', 'error');
