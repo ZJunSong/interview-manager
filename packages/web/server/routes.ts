@@ -300,7 +300,33 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
   }
 });
 
-// POST /api/interviews/:id/visit - 记录访问时间
+// POST /api/interviews/visit-company - 以公司为基准批量记录访问时间
+// 同一公司的所有岗位记录共享同一次访问时间戳，前端以公司维度展示"最近访问"
+router.post('/visit-company', (req: AuthRequest, res) => {
+  try {
+    const company = typeof req.body?.company === 'string' ? req.body.company.trim() : '';
+    if (!company || company.length > MAX_COMPANY_LEN) {
+      return res.status(400).json({ error: '公司名称无效' });
+    }
+
+    const db = getDatabase();
+    const now = new Date().toISOString();
+    const result = db.prepare(
+      'UPDATE interviews SET last_visited_at = ? WHERE user_id = ? AND company = ?'
+    ).run(now, req.user!.userId, company);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: '未找到该公司的面试记录' });
+    }
+
+    res.json({ success: true, updated: result.changes, lastVisitedAt: now });
+  } catch (err) {
+    console.error('[POST /visit-company] 批量记录访问失败:', err);
+    res.status(500).json({ error: '记录访问时间失败' });
+  }
+});
+
+// POST /api/interviews/:id/visit - 记录单条记录访问时间
 router.post('/:id/visit', (req: AuthRequest, res) => {
   try {
     const { id } = req.params;

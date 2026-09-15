@@ -29,10 +29,10 @@
         </div>
         <div class="toolbar-actions">
           <select v-model="sortBy" class="sort-select">
+            <option value="progress">按进度</option>
             <option value="newest">最新优先</option>
             <option value="oldest">最早优先</option>
             <option value="company">按公司名</option>
-            <option value="progress">按进度</option>
             <option value="recentVisit">最近访问</option>
           </select>
           <button class="btn btn-primary" @click="showAddModal = true">+ 添加面试</button>
@@ -54,41 +54,58 @@
       />
 
       <div v-else class="card-list">
-        <div v-for="item in filteredInterviews" :key="item.id" class="card" :class="getVisitStatusClass(item)">
+        <div
+          v-for="group in companyGroups"
+          :key="group.company"
+          class="card"
+          :class="getVisitStatusClass(group.latestVisit)"
+        >
           <div class="card-header">
             <div class="card-info">
-              <h2 class="card-company" :class="{ 'has-url': item.url }" @click="item.url && handleVisit(item)">
-                {{ item.company }}
-                <span v-if="item.url" class="url-icon" title="点击访问招聘页面">↗</span>
+              <h2
+                class="card-company"
+                :class="{ 'has-url': group.url }"
+                :title="group.url ? '点击访问招聘页面，该公司全部岗位标记为已访问' : ''"
+                @click="group.url && handleVisitCompany(group)"
+              >
+                {{ group.company }}
+                <span v-if="group.url" class="url-icon">↗</span>
               </h2>
-              <span class="card-position">{{ item.position }}</span>
-              <span class="card-date">{{ (item.createdAt || '').slice(0, 10) }} 投递</span>
+              <span class="card-count">{{ group.items.length }} 个岗位</span>
             </div>
             <div class="card-right">
               <span
-                v-if="item.url"
+                v-if="group.url"
                 class="visit-badge"
-                :class="item.lastVisitedAt ? getVisitStatusClass(item) : 'visit-never'"
+                :class="group.latestVisit ? getVisitStatusClass(group.latestVisit) : 'visit-never'"
               >
-                <span class="visit-dot"></span>{{ item.lastVisitedAt ? getVisitStatusLabel(item) : '未访问' }}
+                <span class="visit-dot"></span>{{ group.latestVisit ? getVisitStatusLabel(group.latestVisit) : '未访问' }}
               </span>
-              <div class="card-actions">
-                <button class="btn-icon" @click="editInterview(item)">编辑</button>
-                <button class="btn-icon btn-danger" @click="confirmDelete(item)">删除</button>
-              </div>
             </div>
           </div>
 
-          <div class="card-timeline scrollbar-thin">
-            <div
-              v-for="(stage, i) in item.stages"
-              :key="i"
-              class="timeline-node"
-              :class="[`status-${stage.status}`, { clickable: stage.status === 'current' }]"
-              @click="stage.status === 'current' && openStageMenu(item.id, i, $event)"
-            >
-              <div class="node-dot"></div>
-              <div class="node-label">{{ stage.name }}</div>
+          <div v-for="item in group.items" :key="item.id" class="position-row">
+            <div class="position-meta">
+              <span class="card-position">{{ item.position }}</span>
+              <span class="card-date">{{ (item.createdAt || '').slice(0, 10) }}</span>
+            </div>
+
+            <div class="card-timeline scrollbar-thin">
+              <div
+                v-for="(stage, i) in item.stages"
+                :key="i"
+                class="timeline-node"
+                :class="[`status-${stage.status}`, { clickable: stage.status === 'current' }]"
+                @click="stage.status === 'current' && openStageMenu(item.id, i, $event)"
+              >
+                <div class="node-dot"></div>
+                <div class="node-label">{{ stage.name }}</div>
+              </div>
+            </div>
+
+            <div class="row-actions">
+              <button class="btn-icon" @click="editInterview(item)">编辑</button>
+              <button class="btn-icon btn-danger" @click="confirmDelete(item)">删除</button>
             </div>
           </div>
         </div>
@@ -108,7 +125,7 @@
             <input v-model="addForm.position" type="text" required placeholder="例如：前端工程师" />
           </div>
           <div class="form-group">
-            <label>招聘页面链接 <span class="optional">（选填）</span></label>
+            <label>招聘页面链接 <span class="optional">（选填，同公司建议填同一个）</span></label>
             <input v-model="addForm.url" type="url" placeholder="例如：https://jobs.example.com/123" />
           </div>
           <div class="modal-actions">
@@ -146,7 +163,7 @@
     <div v-if="showDeleteDialog" class="modal-overlay" @click.self="showDeleteDialog = false">
       <div class="modal modal-small">
         <h3>确认删除</h3>
-        <p>确定要删除 {{ deleteTarget?.company }} 的面试记录吗？</p>
+        <p>确定要删除 {{ deleteTarget?.company }} 的 {{ deleteTarget?.position }} 面试记录吗？</p>
         <div class="modal-actions">
           <button class="btn btn-secondary" @click="showDeleteDialog = false">取消</button>
           <button class="btn btn-danger" @click="handleDelete">删除</button>
@@ -169,7 +186,8 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Interview } from '../types';
-import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, recordVisit } from '../api';
+import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, visitCompany } from '../api';
+import { filterInterviews, groupByCompany, sortGroups, type CompanyGroup, type SortMode } from '../utils/grouping';
 import StatsPanel from '../components/StatsPanel.vue';
 import EmptyState from '../components/EmptyState.vue';
 
@@ -179,7 +197,7 @@ const loading = ref(true);
 const interviews = ref<Interview[]>([]);
 const searchQuery = ref('');
 // 默认按进度排序：每次打开页面都以此为初始排序
-const sortBy = ref('progress');
+const sortBy = ref<SortMode>('progress');
 
 const showAddModal = ref(false);
 const showEditModal = ref(false);
@@ -199,47 +217,17 @@ function showToast(message: string, type: 'success' | 'error' = 'success') {
   setTimeout(() => { toast.value.show = false; }, 2000);
 }
 
-const filteredInterviews = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase();
-  let list = interviews.value;
+// 搜索过滤（记录级：命中公司名或职位名的记录才会出现在卡片里）
+const filteredInterviews = computed(() => filterInterviews(interviews.value, searchQuery.value));
 
-  if (q) {
-    list = list.filter(i => i.company.toLowerCase().includes(q) || i.position.toLowerCase().includes(q));
-  }
+// 公司聚合 + 公司维度排序：同公司多岗位归并为一个卡片
+const companyGroups = computed(() => sortGroups(groupByCompany(filteredInterviews.value), sortBy.value));
 
-  const sorted = [...list];
-  switch (sortBy.value) {
-    case 'newest': sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); break;
-    case 'oldest': sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()); break;
-    case 'company': sorted.sort((a, b) => a.company.localeCompare(b.company, 'zh-CN')); break;
-    case 'progress': sorted.sort((a, b) => getProgress(b) - getProgress(a)); break;
-    case 'recentVisit':
-      sorted.sort((a, b) => {
-        // 有访问记录的排在前面
-        if (a.lastVisitedAt && b.lastVisitedAt) {
-          return new Date(b.lastVisitedAt).getTime() - new Date(a.lastVisitedAt).getTime();
-        }
-        if (a.lastVisitedAt) return -1;
-        if (b.lastVisitedAt) return 1;
-        // 都没有访问记录的按创建时间排序
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      });
-      break;
-  }
+function getVisitStatusClass(lastVisitedAt?: string): string {
+  if (!lastVisitedAt) return '';
 
-  return sorted;
-});
-
-function getProgress(item: Interview): number {
-  return item.stages.filter(s => s.status === 'pass' || s.status === 'skip').length;
-}
-
-function getVisitStatusClass(item: Interview): string {
-  if (!item.lastVisitedAt || !item.url) return '';
-
-  const lastVisit = new Date(item.lastVisitedAt).getTime();
-  const now = Date.now();
-  const hoursSinceVisit = (now - lastVisit) / (1000 * 60 * 60);
+  const lastVisit = new Date(lastVisitedAt).getTime();
+  const hoursSinceVisit = (Date.now() - lastVisit) / (1000 * 60 * 60);
 
   if (hoursSinceVisit < 4) return 'visit-fresh';
   if (hoursSinceVisit < 8) return 'visit-normal';
@@ -247,15 +235,13 @@ function getVisitStatusClass(item: Interview): string {
   return 'visit-danger';
 }
 
-function getVisitStatusLabel(item: Interview): string {
-  if (!item.lastVisitedAt || !item.url) return '';
+function getVisitStatusLabel(lastVisitedAt?: string): string {
+  if (!lastVisitedAt) return '';
 
-  const lastVisit = new Date(item.lastVisitedAt).getTime();
-  const now = Date.now();
-  const hoursSinceVisit = (now - lastVisit) / (1000 * 60 * 60);
+  const lastVisit = new Date(lastVisitedAt).getTime();
+  const hoursSinceVisit = (Date.now() - lastVisit) / (1000 * 60 * 60);
 
   if (hoursSinceVisit < 1) return '刚刚访问';
-  if (hoursSinceVisit < 4) return `${Math.floor(hoursSinceVisit)}小时前访问`;
   if (hoursSinceVisit < 24) return `${Math.floor(hoursSinceVisit)}小时前访问`;
   return `${Math.floor(hoursSinceVisit / 24)}天前访问`;
 }
@@ -398,21 +384,20 @@ function closeStageMenu() {
   stageMenu.value.visible = false;
 }
 
-async function handleVisit(item: Interview) {
-  if (!item.url) return;
+// 以公司为基准访问：打开该公司的招聘页面（优先取最近访问过的岗位的链接），
+// 公司下所有岗位记录一次性标记为已访问
+async function handleVisitCompany(group: CompanyGroup) {
+  if (!group.url) return;
 
-  // 在新标签页打开链接
-  window.open(item.url, '_blank');
+  window.open(group.url, '_blank');
 
-  // 记录访问时间
   try {
-    const result = await recordVisit(item.id);
-    const idx = interviews.value.findIndex(i => i.id === item.id);
-    if (idx !== -1) {
-      interviews.value[idx] = { ...interviews.value[idx], lastVisitedAt: result.lastVisitedAt };
-    }
+    const result = await visitCompany(group.company);
+    interviews.value = interviews.value.map(i =>
+      i.company.trim() === group.company ? { ...i, lastVisitedAt: result.lastVisitedAt } : i
+    );
   } catch {
-    // 静默失败，不影响用户体验
+    // 静默失败，不影响跳转体验
   }
 }
 
@@ -650,7 +635,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   gap: 12px;
 }
 
@@ -690,12 +675,11 @@ onUnmounted(() => {
   opacity: 1;
 }
 
-.card-position {
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
-  padding: 3px 12px;
+.card-count {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  background: var(--color-gray-soft);
+  padding: 2px 10px;
   border-radius: var(--radius-full);
 }
 
@@ -705,13 +689,6 @@ onUnmounted(() => {
   font-variant-numeric: tabular-nums;
 }
 
-.card-actions {
-  display: flex;
-  gap: 6px;
-  flex-shrink: 0;
-}
-
-/* ===== 访问新鲜度标记（右侧标签）：提醒及时访问检查进度 ===== */
 .card-right {
   display: flex;
   align-items: center;
@@ -763,6 +740,56 @@ onUnmounted(() => {
   background: var(--color-gray-soft);
 }
 
+/* ===== 岗位行：公司卡片内的每条记录（单条与多条完全同构） ===== */
+.position-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 10px 0;
+}
+
+.position-row + .position-row {
+  border-top: 1px dashed var(--color-border);
+}
+
+.position-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.card-position {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  padding: 3px 12px;
+  border-radius: var(--radius-full);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.card-timeline {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  overflow-x: auto;
+  padding: 10px 0 4px;
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
 .btn-icon {
   padding: 6px 14px;
   font-size: 13px;
@@ -787,14 +814,6 @@ onUnmounted(() => {
 }
 
 /* ===== 时间线：连接线 + 状态符号 + 当前阶段脉冲 ===== */
-.card-timeline {
-  display: flex;
-  align-items: flex-start;
-  gap: 0;
-  overflow-x: auto;
-  padding: 10px 0 4px;
-}
-
 .timeline-node {
   display: flex;
   flex-direction: column;
@@ -1070,6 +1089,14 @@ onUnmounted(() => {
   .card-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .position-row {
+    flex-wrap: wrap;
+  }
+
+  .row-actions {
+    margin-left: auto;
   }
 }
 </style>

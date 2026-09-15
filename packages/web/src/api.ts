@@ -95,6 +95,13 @@ export function recordVisit(id: string): Promise<{ id: string; lastVisitedAt: st
   });
 }
 
+export function visitCompany(company: string): Promise<{ success: boolean; updated: number; lastVisitedAt: string }> {
+  return request(`${BASE}/interviews/visit-company`, {
+    method: 'POST',
+    body: JSON.stringify({ company })
+  });
+}
+
 export function updateInterview(id: string, company: string, position: string, url?: string): Promise<Interview> {
   return request<Interview>(`${BASE}/interviews/${id}`, {
     method: 'PATCH',
