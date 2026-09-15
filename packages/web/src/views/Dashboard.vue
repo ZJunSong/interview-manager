@@ -301,6 +301,18 @@ async function handleAdd() {
     interviews.value.unshift(newInterview);
     showAddModal.value = false;
     addForm.value = { company: '', position: '', url: '' };
+
+    // 添加即视为一次访问：用户通常正浏览该公司招聘页时录入，公司维度刷新访问时间，
+    // 新卡片立即显示"刚刚访问"而非"未访问"
+    try {
+      const visit = await visitCompany(company);
+      interviews.value = interviews.value.map(i =>
+        i.company.trim() === company ? { ...i, lastVisitedAt: visit.lastVisitedAt } : i
+      );
+    } catch {
+      // 访问标记失败不影响添加结果
+    }
+
     // 新公司进入排序快照并滚动定位到它的卡片
     recomputeOrder();
     scrollToCompany(company);
