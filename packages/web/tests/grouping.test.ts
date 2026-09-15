@@ -56,7 +56,8 @@ describe('groupByCompany 公司聚合', () => {
     ]);
     expect(groups).toHaveLength(2);
     const tx = groups.find(g => g.company === '腾讯')!;
-    expect(tx.items.map(i => i.id)).toEqual(['1', '2']);
+    // 组内顺序由组内排序规则决定（见"组内排序"用例），此处只验证聚合完整
+    expect([...tx.items.map(i => i.id)].sort()).toEqual(['1', '2']);
   });
 
   it('公司名仅 trim 后比较，忽略首尾空格差异', () => {
@@ -141,5 +142,114 @@ describe('sortGroups 公司维度排序', () => {
     // zh-CN localeCompare 按拼音：阿(ā) < 腾(téng) < 字(zì)
     expect(sorted.map(g => g.company)).toEqual(['阿里巴巴', '腾讯', '字节跳动']);
     expect(groups[0].company).toBe('腾讯');
+  });
+});
+
+// ===== 已挂流程的排序沉底规则 =====
+// "挂了"= 任一阶段 fail/rejected 且未拿到 offer；全挂公司不参与排序固定沉底
+
+function failedStages(passed: number): Interview['stages'] {
+  return Array.from({ length: 10 }, (_, i) => ({
+    name: `阶段${i}`,
+    status: i < passed ? 'pass' : i === passed ? 'fail' : 'pending'
+  }));
+}
+
+function offerStages(): Interview['stages'] {
+  return Array.from({ length: 10 }, (_, i) => ({ name: `阶段${i}`, status: 'pass' }));
+}
+
+describe('已挂记录：公司聚合口径', () => {
+  it('maxProgress 只从未挂的岗位中取最大，挂了的岗位不参与', () => {
+    const groups = groupByCompany([
+      makeItem({ id: '1', company: '腾讯', position: '挂了的', createdAt: '2026-09-01', stages: failedStages(3) }),
+      makeItem({ id: '2', company: '腾讯', position: '活着的', createdAt: '2026-09-02', stages: makeStages(1, 1) })
+    ]);
+    // 挂了的岗位进度 3 不计入，公司进度取活着的 1
+    expect(groups[0].maxProgress).toBe(1);
+  });
+
+  it('拿到 offer 的记录不算挂，正常参与公司进度', () => {
+    const groups = groupByCompany([
+      makeItem({ id: '1', company: '腾讯', position: '有offer', stages: offerStages() }),
+      makeItem({ id: '2', company: '腾讯', position: '挂了的', stages: failedStages(5) })
+    ]);
+    expect(groups[0].maxProgress).toBe(10);
+  });
+
+  it('全公司都挂了时进度取真实最大值（仅用于全挂公司之间的相对排序）', () => {
+    const groups = groupByCompany([
+      makeItem({ id: '1', company: '腾讯', position: 'a', stages: failedStages(2) }),
+      makeItem({ id: '2', company: '腾讯', position: 'b', stages: failedStages(6) })
+    ]);
+    expect(groups[0].maxProgress).toBe(6);
+  });
+
+  it('组内排序：未挂的按进度降序在前，挂了的沉到最后', () => {
+    const groups = groupByCompany([
+      makeItem({ id: '1', company: '腾讯', position: '挂了', createdAt: '2026-09-01', stages: failedStages(3) }),
+      makeItem({ id: '2', company: '腾讯', position: '进度低', createdAt: '2026-09-02', stages: makeStages(1, 1) }),
+      makeItem({ id: '3', company: '腾讯', position: '进度高', createdAt: '2026-09-03', stages: makeStages(2, 2) })
+    ]);
+    expect(groups[0].items.map(i => i.id)).toEqual(['3', '2', '1']);
+  });
+});
+
+describe('已挂记录：公司排序沉底', () => {
+  const alive = (company: string, maxProgress: number, latestCreatedAt: string): CompanyGroup => ({
+    company,
+    items: [makeItem({ id: company, company, position: 'x', createdAt: latestCreatedAt, stages: makeStages(maxProgress, maxProgress) })],
+    maxProgress,
+    latestCreatedAt
+  });
+
+  const dead = (company: string, maxProgress: number, latestCreatedAt: string): CompanyGroup => ({
+    company,
+    items: [makeItem({ id: company, company, position: 'x', createdAt: latestCreatedAt, stages: failedStages(maxProgress) })],
+    maxProgress,
+    latestCreatedAt
+  });
+
+  it('progress：全挂公司排最后，即使其进度数值更高', () => {
+    const sorted = sortGroups([
+      dead('全挂高进度', 8, '2026-09-10'),
+      alive('活的低进度', 2, '2026-09-01'),
+      alive('活的高进度', 5, '2026-09-05')
+    ], 'progress');
+    expect(sorted.map(g => g.company)).toEqual(['活的高进度', '活的低进度', '全挂高进度']);
+  });
+
+  it('progress：两个全挂公司之间按进度降序相对排列', () => {
+    const sorted = sortGroups([
+      dead('全挂甲', 2, '2026-09-01'),
+      alive('活的', 3, '2026-09-01'),
+      dead('全挂乙', 6, '2026-09-01')
+    ], 'progress');
+    expect(sorted.map(g => g.company)).toEqual(['活的', '全挂乙', '全挂甲']);
+  });
+
+  it('recentVisit：全挂公司即使访问时间最新也排最后', () => {
+    const sorted = sortGroups([
+      dead('全挂刚访问', 4, '2026-09-01'),
+      alive('活的早访问', 1, '2026-09-01')
+    ].map(g => ({ ...g, latestVisit: g.company === '全挂刚访问' ? '2026-09-12T00:00:00.000Z' : '2026-09-08T00:00:00.000Z' })), 'recentVisit');
+    expect(sorted.map(g => g.company)).toEqual(['活的早访问', '全挂刚访问']);
+  });
+
+  it('newest：全挂公司排最后，活的公司之间仍按最新投递排序', () => {
+    const sorted = sortGroups([
+      dead('全挂新投递', 4, '2026-09-15'),
+      alive('活的旧', 1, '2026-09-01'),
+      alive('活的新', 1, '2026-09-10')
+    ], 'newest');
+    expect(sorted.map(g => g.company)).toEqual(['活的新', '活的旧', '全挂新投递']);
+  });
+
+  it('company：全挂公司按公司名排序时同样沉底', () => {
+    const sorted = sortGroups([
+      dead('阿里巴巴', 4, '2026-09-01'),
+      alive('字节跳动', 1, '2026-09-01')
+    ], 'company');
+    expect(sorted.map(g => g.company)).toEqual(['字节跳动', '阿里巴巴']);
   });
 });

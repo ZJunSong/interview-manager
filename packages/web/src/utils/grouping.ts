@@ -19,6 +19,27 @@ function progressOf(item: Interview): number {
   return item.stages.filter(s => s.status === 'pass' || s.status === 'skip').length;
 }
 
+/** 记录是否已终结（"挂了"）：任一阶段 fail/rejected 且未拿到 offer。口径与统计面板一致 */
+export function isInterviewTerminated(item: Interview): boolean {
+  const hasOffer = item.stages[item.stages.length - 1]?.status === 'pass';
+  const killed = item.stages.some(s => s.status === 'fail' || s.status === 'rejected');
+  return killed && !hasOffer;
+}
+
+/** 组内岗位排序：未终结的按进度降序在前（同进度新的在前），已终结的沉到最后（之间按投递时间新→旧） */
+function sortItemsWithinGroup(items: Interview[]): Interview[] {
+  return [...items].sort((a, b) => {
+    const deadA = isInterviewTerminated(a) ? 1 : 0;
+    const deadB = isInterviewTerminated(b) ? 1 : 0;
+    if (deadA !== deadB) return deadA - deadB;
+    if (deadA === 1) return a.createdAt < b.createdAt ? 1 : -1;
+    const pa = progressOf(a);
+    const pb = progressOf(b);
+    if (pa !== pb) return pb - pa;
+    return a.createdAt < b.createdAt ? 1 : -1;
+  });
+}
+
 function newestVisitOf(items: Interview[]): string | undefined {
   let latest: string | undefined;
   for (const i of items) {
@@ -59,17 +80,21 @@ export function groupByCompany(interviews: Interview[]): CompanyGroup[] {
   }
 
   const groups: CompanyGroup[] = [];
-  for (const [company, items] of map) {
+  for (const [company, rawItems] of map) {
+    // 挂了的岗位不参与公司进度计算：maxProgress 取未终结岗位的最大进度；
+    // 全公司都挂了时取真实最大进度（仅用于全挂公司之间的相对排序）
+    const alive = rawItems.filter(i => !isInterviewTerminated(i));
+    const pool = alive.length > 0 ? alive : rawItems;
     groups.push({
       company,
-      items,
-      maxProgress: Math.max(...items.map(progressOf)),
-      latestCreatedAt: items.reduce(
+      items: sortItemsWithinGroup(rawItems),
+      maxProgress: Math.max(...pool.map(progressOf)),
+      latestCreatedAt: rawItems.reduce(
         (acc, i) => (i.createdAt > acc ? i.createdAt : acc),
-        items[0].createdAt
+        rawItems[0].createdAt
       ),
-      latestVisit: newestVisitOf(items),
-      url: pickUrl(items)
+      latestVisit: newestVisitOf(rawItems),
+      url: pickUrl(rawItems)
     });
   }
   return groups;
@@ -77,8 +102,7 @@ export function groupByCompany(interviews: Interview[]): CompanyGroup[] {
 
 export type SortMode = 'progress' | 'newest' | 'oldest' | 'company' | 'recentVisit';
 
-/** 公司维度排序。progress：公司最大进度降序；recentVisit：公司最新访问降序，未访问排最后 */
-export function sortGroups(groups: CompanyGroup[], sortBy: SortMode): CompanyGroup[] {
+function applySort(groups: CompanyGroup[], sortBy: SortMode): CompanyGroup[] {
   const sorted = [...groups];
   switch (sortBy) {
     case 'progress':
@@ -107,4 +131,11 @@ export function sortGroups(groups: CompanyGroup[], sortBy: SortMode): CompanyGro
       break;
   }
   return sorted;
+}
+
+/** 公司维度排序：全部岗位都已终结的公司不参与排序，固定排在最后（组内保持所选策略的相对顺序） */
+export function sortGroups(groups: CompanyGroup[], sortBy: SortMode): CompanyGroup[] {
+  const alive = groups.filter(g => g.items.length > 0 && g.items.some(i => !isInterviewTerminated(i)));
+  const dead = groups.filter(g => !(g.items.length > 0 && g.items.some(i => !isInterviewTerminated(i))));
+  return [...applySort(alive, sortBy), ...applySort(dead, sortBy)];
 }
