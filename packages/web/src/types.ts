@@ -22,6 +22,8 @@ export interface Interview {
   status: 'active' | 'archived';
   url?: string;
   lastVisitedAt?: string;
+  /** 公司维度置顶（同公司任一记录置顶即整体置顶） */
+  pinned?: boolean;
   createdAt: string;
   updatedAt: string;
 }

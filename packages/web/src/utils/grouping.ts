@@ -5,7 +5,9 @@ export interface CompanyGroup {
   company: string;
   /** 组内全部记录 */
   items: Interview[];
-  /** 公司最大进度（pass+skip 的阶段数最大值） */
+  /** 公司置顶：组内任一记录置顶即整体置顶，固定排在最前不参与排序 */
+  pinned: boolean;
+  /** 公司最大进度（未挂岗位的最大值，全挂时为组内真实最大值） */
   maxProgress: number;
   /** 组内最新投递时间 */
   latestCreatedAt: string;
@@ -88,6 +90,7 @@ export function groupByCompany(interviews: Interview[]): CompanyGroup[] {
     groups.push({
       company,
       items: sortItemsWithinGroup(rawItems),
+      pinned: rawItems.some(i => !!i.pinned),
       maxProgress: Math.max(...pool.map(progressOf)),
       latestCreatedAt: rawItems.reduce(
         (acc, i) => (i.createdAt > acc ? i.createdAt : acc),
@@ -138,9 +141,12 @@ export function isGroupTerminated(group: CompanyGroup): boolean {
   return group.items.length > 0 && group.items.every(isInterviewTerminated);
 }
 
-/** 公司维度排序：全部岗位都已终结的公司不参与排序，固定排在最后（组内保持所选策略的相对顺序） */
+/** 公司维度排序：置顶组固定最前（不参与排序、不受全挂沉底影响），
+ * 其余公司按策略排序，全部岗位都终结的公司排在最后 */
 export function sortGroups(groups: CompanyGroup[], sortBy: SortMode): CompanyGroup[] {
-  const alive = groups.filter(g => !isGroupTerminated(g));
-  const dead = groups.filter(g => isGroupTerminated(g));
-  return [...applySort(alive, sortBy), ...applySort(dead, sortBy)];
+  const pinned = groups.filter(g => g.pinned);
+  const rest = groups.filter(g => !g.pinned);
+  const alive = rest.filter(g => !isGroupTerminated(g));
+  const dead = rest.filter(g => isGroupTerminated(g));
+  return [...applySort(pinned, sortBy), ...applySort(alive, sortBy), ...applySort(dead, sortBy)];
 }

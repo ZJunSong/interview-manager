@@ -55,6 +55,10 @@ export async function initDatabase(): Promise<void> {
     db.exec("ALTER TABLE interviews ADD COLUMN last_visited_at TEXT");
     console.log('[Database] 已添加 last_visited_at 列');
   }
+  if (!columnNames.includes('pinned')) {
+    db.exec("ALTER TABLE interviews ADD COLUMN pinned INTEGER DEFAULT 0");
+    console.log('[Database] 已添加 pinned 列');
+  }
   
   // 创建默认管理员账号（如果不存在）
   const admin = db.prepare('SELECT id FROM users WHERE username = ?').get('admin');

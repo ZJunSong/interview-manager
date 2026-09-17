@@ -69,12 +69,30 @@
                 :title="group.url ? '点击访问招聘页面，该公司全部岗位标记为已访问' : ''"
                 @click="group.url && handleVisitCompany(group)"
               >
+                <span v-if="group.pinned" class="pin-flag" title="已置顶">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 17v5"/>
+                    <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
+                  </svg>
+                </span>
                 {{ group.company }}
                 <span v-if="group.url" class="url-icon">↗</span>
               </h2>
               <span class="card-count">{{ group.items.length }} 个岗位</span>
             </div>
             <div class="card-right">
+              <button
+                class="btn-icon pin-btn"
+                :class="{ 'pin-active': group.pinned }"
+                :title="group.pinned ? '取消置顶' : '置顶该公司，固定显示在最前'"
+                @click="togglePin(group)"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 17v5"/>
+                  <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
+                </svg>
+                {{ group.pinned ? '已置顶' : '置顶' }}
+              </button>
               <span
                 v-if="group.url && !isGroupTerminated(group)"
                 class="visit-badge"
@@ -190,7 +208,7 @@
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Interview } from '../types';
-import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, visitCompany } from '../api';
+import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, visitCompany, pinCompany } from '../api';
 import { filterInterviews, groupByCompany, sortGroups, isInterviewTerminated, isGroupTerminated, type CompanyGroup, type SortMode } from '../utils/grouping';
 import StatsPanel from '../components/StatsPanel.vue';
 import EmptyState from '../components/EmptyState.vue';
@@ -432,6 +450,22 @@ async function handleImport(event: Event) {
 
 function closeStageMenu() {
   stageMenu.value.visible = false;
+}
+
+// 公司维度置顶/取消置顶：置顶公司固定在列表最前，不参与排序也不受全挂沉底影响
+async function togglePin(group: CompanyGroup) {
+  const target = !group.pinned;
+  try {
+    await pinCompany(group.company, target);
+    interviews.value = interviews.value.map(i =>
+      i.company.trim() === group.company ? { ...i, pinned: target } : i
+    );
+    // 置顶是主动操作，立即重算顺序让卡片移动到目标位置（置顶到最前/取消后回归排序位置）
+    recomputeOrder();
+    showToast(target ? '已置顶' : '已取消置顶');
+  } catch {
+    showToast('操作失败', 'error');
+  }
 }
 
 // 以公司为基准访问：打开该公司的招聘页面（优先取最近访问过的岗位的链接），
@@ -867,6 +901,27 @@ onUnmounted(() => {
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-out);
+}
+
+/* 置顶按钮：图钉 SVG 与文字对齐 */
+.pin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.pin-btn.pin-active {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+
+/* 已置顶公司在公司名旁的图钉标识 */
+.pin-flag {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-accent);
+  flex-shrink: 0;
 }
 
 .btn-icon:hover {

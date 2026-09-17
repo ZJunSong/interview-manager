@@ -207,6 +207,49 @@ describe('已挂记录：公司聚合口径', () => {
     ]);
     expect(isGroupTerminated(hasAlive[0])).toBe(false);
   });
+
+  it('公司置顶：组内任一记录置顶即整体置顶', () => {
+    const groups = groupByCompany([
+      makeItem({ id: '1', company: '腾讯', position: 'a', pinned: true }),
+      makeItem({ id: '2', company: '腾讯', position: 'b' })
+    ]);
+    expect(groups[0].pinned).toBe(true);
+  });
+});
+
+describe('置顶公司排序：固定最前，不参与排序也不受全挂沉底影响', () => {
+  const g = (company: string, opts: { pinned?: boolean; dead?: boolean; maxProgress?: number } = {}): CompanyGroup => ({
+    company,
+    items: [makeItem({ id: company, company, position: 'x', stages: opts.dead ? failedStages(3) : makeStages(1, 1) })],
+    pinned: !!opts.pinned,
+    maxProgress: opts.maxProgress ?? 1,
+    latestCreatedAt: '2026-09-01'
+  });
+
+  it('置顶公司排在所有非置顶公司之前', () => {
+    const sorted = sortGroups([
+      g('普通高进度', { maxProgress: 9 }),
+      g('置顶低进度', { pinned: true, maxProgress: 1 })
+    ], 'progress');
+    expect(sorted.map(x => x.company)).toEqual(['置顶低进度', '普通高进度']);
+  });
+
+  it('全挂但置顶的公司不沉底，仍固定最前', () => {
+    const sorted = sortGroups([
+      g('全挂但置顶', { pinned: true, dead: true, maxProgress: 1 }),
+      g('活的普通', { maxProgress: 5 })
+    ], 'progress');
+    expect(sorted.map(x => x.company)).toEqual(['全挂但置顶', '活的普通']);
+  });
+
+  it('多个置顶公司之间按当前排序策略相对排列', () => {
+    const sorted = sortGroups([
+      g('置顶甲', { pinned: true, maxProgress: 2 }),
+      g('置顶乙', { pinned: true, maxProgress: 7 }),
+      g('普通', { maxProgress: 9 })
+    ], 'progress');
+    expect(sorted.map(x => x.company)).toEqual(['置顶乙', '置顶甲', '普通']);
+  });
 });
 
 describe('已挂记录：公司排序沉底', () => {

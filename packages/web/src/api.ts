@@ -102,6 +102,13 @@ export function visitCompany(company: string): Promise<{ success: boolean; updat
   });
 }
 
+export function pinCompany(company: string, pinned: boolean): Promise<{ success: boolean; updated: number; pinned: boolean }> {
+  return request(`${BASE}/interviews/pin-company`, {
+    method: 'PUT',
+    body: JSON.stringify({ company, pinned })
+  });
+}
+
 export function updateInterview(id: string, company: string, position: string, url?: string): Promise<Interview> {
   return request<Interview>(`${BASE}/interviews/${id}`, {
     method: 'PATCH',

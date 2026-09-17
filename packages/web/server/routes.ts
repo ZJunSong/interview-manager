@@ -49,6 +49,7 @@ router.get('/', (req: AuthRequest, res) => {
       status: row.status,
       url: row.url || undefined,
       lastVisitedAt: row.last_visited_at || undefined,
+      pinned: !!row.pinned,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -74,6 +75,7 @@ router.get('/export', (req: AuthRequest, res) => {
       status: row.status,
       url: row.url || undefined,
       lastVisitedAt: row.last_visited_at || undefined,
+      pinned: !!row.pinned,
       createdAt: row.created_at,
       updatedAt: row.updated_at
     }));
@@ -123,6 +125,7 @@ router.post('/', (req: AuthRequest, res) => {
       stages,
       status: 'active',
       url: url || undefined,
+      pinned: false,
       createdAt: now,
       updatedAt: now
     });
@@ -169,14 +172,14 @@ router.post('/import', (req: AuthRequest, res) => {
     
     let importedCount = 0;
     const insertStmt = db.prepare(`
-      INSERT INTO interviews (id, user_id, company, position, stages, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO interviews (id, user_id, company, position, stages, status, pinned, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
-    
+
     for (const item of imported) {
       const newId = item.id || uuidv4();
       if (existingIds.has(newId)) continue;
-      
+
       const now = new Date().toISOString();
       insertStmt.run(
         newId,
@@ -185,6 +188,7 @@ router.post('/import', (req: AuthRequest, res) => {
         item.position.trim(),
         JSON.stringify(item.stages),
         item.status || 'active',
+        item.pinned ? 1 : 0,
         item.createdAt || now,
         item.updatedAt || now
       );
@@ -235,6 +239,7 @@ router.patch('/:id', (req: AuthRequest, res) => {
       status: row.status,
       url: url || undefined,
       lastVisitedAt: row.last_visited_at || undefined,
+      pinned: !!row.pinned,
       createdAt: row.created_at,
       updatedAt: now
     });
@@ -292,6 +297,7 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
       status: row.status,
       url: row.url || undefined,
       lastVisitedAt: row.last_visited_at || undefined,
+      pinned: !!row.pinned,
       createdAt: row.created_at,
       updatedAt: now
     });
@@ -324,6 +330,34 @@ router.post('/visit-company', (req: AuthRequest, res) => {
   } catch (err) {
     console.error('[POST /visit-company] 批量记录访问失败:', err);
     res.status(500).json({ error: '记录访问时间失败' });
+  }
+});
+
+// PUT /api/interviews/pin-company - 公司维度置顶/取消置顶
+// 置顶的公司固定展示在列表最前，不参与任何排序策略，也不受全挂沉底影响
+router.put('/pin-company', (req: AuthRequest, res) => {
+  try {
+    const company = typeof req.body?.company === 'string' ? req.body.company.trim() : '';
+    if (!company || company.length > MAX_COMPANY_LEN) {
+      return res.status(400).json({ error: '公司名称无效' });
+    }
+    if (typeof req.body?.pinned !== 'boolean') {
+      return res.status(400).json({ error: 'pinned 参数无效' });
+    }
+
+    const db = getDatabase();
+    const result = db.prepare(
+      'UPDATE interviews SET pinned = ? WHERE user_id = ? AND company = ?'
+    ).run(req.body.pinned ? 1 : 0, req.user!.userId, company);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: '未找到该公司的面试记录' });
+    }
+
+    res.json({ success: true, updated: result.changes, pinned: req.body.pinned });
+  } catch (err) {
+    console.error('[PUT /pin-company] 置顶操作失败:', err);
+    res.status(500).json({ error: '操作失败' });
   }
 });
 

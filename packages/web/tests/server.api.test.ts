@@ -309,6 +309,89 @@ describe('visit-company 批量访问标记', () => {
   });
 });
 
+// ===== pin-company：公司维度置顶（新接口） =====
+describe('pin-company 公司置顶', () => {
+  let token = '';
+
+  beforeAll(async () => {
+    token = await registerAndLogin('henry');
+    await createInterview(token, '置顶公司', '岗位a', 'https://p.com/a');
+    await createInterview(token, '置顶公司', '岗位b');
+    await createInterview(token, '普通公司', '岗位c');
+  });
+
+  it('置顶后该公司全部岗位记录 pinned=true，其他公司不受影响', async () => {
+    const res = await fetch(`${baseURL}/api/interviews/pin-company`, {
+      method: 'PUT',
+      headers: auth(token),
+      body: JSON.stringify({ company: '置顶公司', pinned: true })
+    });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as any).updated).toBe(2);
+
+    const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
+    const pinnedItems = list.filter((i: any) => i.company === '置顶公司');
+    expect(pinnedItems.every((i: any) => i.pinned === true)).toBe(true);
+    expect(list.find((i: any) => i.company === '普通公司').pinned).toBe(false);
+  });
+
+  it('取消置顶后 pinned=false', async () => {
+    const res = await fetch(`${baseURL}/api/interviews/pin-company`, {
+      method: 'PUT',
+      headers: auth(token),
+      body: JSON.stringify({ company: '置顶公司', pinned: false })
+    });
+    expect(res.status).toBe(200);
+    const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
+    expect(list.filter((i: any) => i.company === '置顶公司').every((i: any) => i.pinned === false)).toBe(true);
+  });
+
+  it('不存在的公司返回 404，非法 pinned 参数返回 400', async () => {
+    const res404 = await fetch(`${baseURL}/api/interviews/pin-company`, {
+      method: 'PUT',
+      headers: auth(token),
+      body: JSON.stringify({ company: '不存在', pinned: true })
+    });
+    expect(res404.status).toBe(404);
+
+    const res400 = await fetch(`${baseURL}/api/interviews/pin-company`, {
+      method: 'PUT',
+      headers: auth(token),
+      body: JSON.stringify({ company: '置顶公司', pinned: 'yes' })
+    });
+    expect(res400.status).toBe(400);
+  });
+
+  it('导出接口包含 pinned 字段', async () => {
+    await fetch(`${baseURL}/api/interviews/pin-company`, {
+      method: 'PUT',
+      headers: auth(token),
+      body: JSON.stringify({ company: '置顶公司', pinned: true })
+    });
+    const data = (await (await fetch(`${baseURL}/api/interviews/export`, { headers: auth(token) })).json()) as any[];
+    expect(data.find((i: any) => i.company === '置顶公司').pinned).toBe(true);
+    expect(data.find((i: any) => i.company === '普通公司').pinned).toBe(false);
+  });
+
+  it('导入带 pinned 字段的数据可持久化（旧格式无该字段默认 false）', async () => {
+    const res = await fetch(`${baseURL}/api/interviews/import`, {
+      method: 'POST',
+      headers: auth(token),
+      body: JSON.stringify({
+        mode: 'overwrite',
+        data: [
+          { company: '导入置顶', position: 'x', stages: validStages(), pinned: true },
+          { company: '导入普通', position: 'y', stages: validStages() }
+        ]
+      })
+    });
+    expect(res.status).toBe(200);
+    const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
+    expect(list.find((i: any) => i.company === '导入置顶').pinned).toBe(true);
+    expect(list.find((i: any) => i.company === '导入普通').pinned).toBe(false);
+  });
+});
+
 // ===== 导入/导出 =====
 describe('数据导入', () => {
   let token = '';
