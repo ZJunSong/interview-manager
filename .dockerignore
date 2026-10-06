@@ -14,10 +14,6 @@
 packages/web/data
 packages/web/tmp-tsc
 
-# 与网页版镜像无关的目录
-website
-docs
-
 # 版本库与工具目录
 .git
 .claude
