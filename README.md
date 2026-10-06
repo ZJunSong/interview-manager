@@ -13,7 +13,11 @@
 轻量自托管：一台 1 核 1G 的服务器、或一台装有 Node.js 的电脑即可运行。
 数据 100% 归你所有——SQLite 单文件存储，备份就是复制一个文件。
 
-![控制台预览](assets/screenshot-dashboard.png)
+<div align="center">
+
+**[▶ 观看操作演示视频](https://github.com/jovanzhang6/interview-manager/releases/latest)**
+
+<img src="assets/screenshot-dashboard.png" alt="控制台界面" width="100%" />
 
 </div>
 
