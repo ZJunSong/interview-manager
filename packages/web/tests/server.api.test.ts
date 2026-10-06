@@ -392,6 +392,46 @@ describe('pin-company 公司置顶', () => {
   });
 });
 
+// ===== 管理员接口（统计/角色）与改密码 =====
+describe('管理员接口与改密码', () => {
+  it('admin/stats 返回全平台统计（回归：SQL 双引号字符串曾致 500）', async () => {
+    const adminToken = await registerAndLogin('admin', 'admin123');
+    const res = await fetch(`${baseURL}/api/interviews/admin/stats`, { headers: auth(adminToken) });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.stats.totalUsers).toBeGreaterThanOrEqual(1);
+    expect(typeof body.stats.totalInterviews).toBe('number');
+    expect(typeof body.stats.recentUsers).toBe('number');
+  });
+
+  it('普通用户访问 admin 接口返回 403', async () => {
+    const userToken = await registerAndLogin('iris');
+    const res = await fetch(`${baseURL}/api/interviews/admin/stats`, { headers: auth(userToken) });
+    expect(res.status).toBe(403);
+  });
+
+  it('修改角色与修改密码接口可用（回归：SQL 双引号字符串曾致 500）', async () => {
+    const adminToken = await registerAndLogin('admin', 'admin123');
+    const jackToken = await registerAndLogin('jack');
+    const users = ((await (await fetch(`${baseURL}/api/auth/users`, { headers: auth(adminToken) })).json()) as any).users;
+    const jackId = users.find((u: any) => u.username === 'jack').id;
+
+    const roleRes = await fetch(`${baseURL}/api/auth/users/${jackId}/role`, {
+      method: 'PUT',
+      headers: auth(adminToken),
+      body: JSON.stringify({ role: 'admin' })
+    });
+    expect(roleRes.status).toBe(200);
+
+    const pwdRes = await fetch(`${baseURL}/api/auth/password`, {
+      method: 'PUT',
+      headers: auth(jackToken),
+      body: JSON.stringify({ oldPassword: 'password123', newPassword: 'newpass456' })
+    });
+    expect(pwdRes.status).toBe(200);
+  });
+});
+
 // ===== 导入/导出 =====
 describe('数据导入', () => {
   let token = '';

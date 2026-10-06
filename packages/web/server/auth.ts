@@ -136,7 +136,7 @@ router.put('/password', authMiddleware, async (req: AuthRequest, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(newPassword, salt);
     
-    db.prepare('UPDATE users SET password_hash = ?, updated_at = datetime("now", "localtime") WHERE id = ?').run(passwordHash, req.user!.userId);
+    db.prepare("UPDATE users SET password_hash = ?, updated_at = datetime('now', 'localtime') WHERE id = ?").run(passwordHash, req.user!.userId);
     
     res.json({ success: true, message: '密码修改成功' });
   } catch (err) {
@@ -151,8 +151,8 @@ router.put('/password', authMiddleware, async (req: AuthRequest, res) => {
 router.get('/users', authMiddleware, adminMiddleware, (req: AuthRequest, res) => {
   const db = getDatabase();
   const users = db.prepare(`
-    SELECT u.id, u.username, u.role, u.created_at, u.updated_at,
-           (SELECT COUNT(*) FROM interviews WHERE user_id = u.id) as interview_count
+    SELECT u.id, u.username, u.role, u.created_at AS createdAt, u.updated_at AS updatedAt,
+           (SELECT COUNT(*) FROM interviews WHERE user_id = u.id) AS interviewCount
     FROM users u
     ORDER BY u.created_at DESC
   `).all();
@@ -193,7 +193,7 @@ router.put('/users/:id/role', authMiddleware, adminMiddleware, (req: AuthRequest
     return res.status(400).json({ error: '不能修改自己的角色' });
   }
   
-  const result = db.prepare('UPDATE users SET role = ?, updated_at = datetime("now", "localtime") WHERE id = ?').run(role, id);
+  const result = db.prepare("UPDATE users SET role = ?, updated_at = datetime('now', 'localtime') WHERE id = ?").run(role, id);
   
   if (result.changes === 0) {
     return res.status(404).json({ error: '用户不存在' });

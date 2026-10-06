@@ -1,42 +1,51 @@
-/* ===== Interview Manager — Global Styles ===== */
-/* Aesthetic: Refined Apple-inspired with editorial clarity.
-   Warm neutral palette, deliberate spacing, luminous depth. */
+/* ===== Interview Manager — 全局设计体系「纸墨」 ===== */
+/* 设计语言：暖纸底色 + 白卡片 + 墨色主按钮 + 蓝色数据强调。
+   衬线字体只用于品牌标题，正文全部无衬线；数字一律等宽对齐。 */
 
 /* 字体通过 index.html 的 <link> 预连接加载，避免 CSS @import 阻塞渲染 */
 
 :root {
   /* Typography */
-  --font-display: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
-  --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', sans-serif;
+  --font-display: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
+  --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-mono: 'SF Mono', 'Fira Code', monospace;
 
-  /* Core palette — warm neutrals */
-  --color-text: #1a1a1c;
-  --color-text-secondary: #6e6e73;
-  --color-text-tertiary: #aeaeb2;
-  --color-bg: #f5f5f0;
-  --color-bg-warm: #ebe8e0;
+  /* 核心色板 — 暖纸与墨 */
+  --color-text: #1c1917;
+  --color-text-secondary: #57534e;
+  --color-text-tertiary: #a29d97;
+  --color-bg: #f6f5f1;
+  --color-bg-deep: #edebe4;
   --color-surface: rgba(255, 255, 255, 0.78);
   --color-surface-solid: #ffffff;
-  --color-border: rgba(0, 0, 0, 0.06);
-  --color-border-strong: rgba(0, 0, 0, 0.12);
+  --color-border: rgba(28, 25, 23, 0.07);
+  --color-border-strong: rgba(28, 25, 23, 0.14);
 
-  /* Semantic colors */
+  /* 主色与语义色 */
   --color-accent: #2563eb;
+  --color-accent-strong: #1d4ed8;
   --color-accent-soft: rgba(37, 99, 235, 0.08);
-  --color-success: #22c55e;
-  --color-success-soft: rgba(34, 197, 94, 0.08);
-  --color-danger: #ef4444;
-  --color-danger-soft: rgba(239, 68, 68, 0.08);
-  --color-gray: #a1a1aa;
-  --color-gray-soft: rgba(161, 161, 170, 0.12);
+  --color-success: #15803d;
+  --color-success-soft: rgba(21, 128, 61, 0.09);
+  --color-danger: #dc2626;
+  --color-danger-soft: rgba(220, 38, 38, 0.08);
+  --color-warning: #b45309;
+  --color-warning-soft: rgba(180, 83, 9, 0.10);
+  --color-orange: #c2410c;
+  --color-orange-soft: rgba(194, 65, 12, 0.10);
+  --color-gray: #78716c;
+  --color-gray-soft: rgba(120, 113, 108, 0.12);
 
-  /* Timeline-specific */
-  --color-pending-border: #d4d4d8;
-  --color-connector: #e4e4e7;
-  --color-connector-pass: #22c55e;
+  /* 主按钮用墨色，与数据强调色分离 */
+  --color-ink: #1c1917;
+  --color-ink-hover: #34302b;
 
-  /* Spacing scale */
+  /* 时间线专用 */
+  --color-pending-border: #d6d3ce;
+  --color-connector: #e5e2dc;
+  --color-connector-pass: var(--color-success);
+
+  /* 间距（8px 基准） */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
@@ -45,24 +54,25 @@
   --space-2xl: 48px;
   --space-3xl: 64px;
 
-  /* Radius */
+  /* 圆角 */
   --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
   --radius-full: 9999px;
 
-  /* Shadows — layered for depth */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(0, 0, 0, 0.03);
-  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.04);
-  --shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.05);
-  --shadow-popover: 0 8px 30px rgba(0, 0, 0, 0.10), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  /* 阴影 — 暖墨色调分层 */
+  --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
+  --shadow-card: 0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 16px rgba(28, 25, 23, 0.04), 0 0 0 1px rgba(28, 25, 23, 0.05);
+  --shadow-card-hover: 0 2px 4px rgba(28, 25, 23, 0.05), 0 12px 32px rgba(28, 25, 23, 0.08), 0 0 0 1px rgba(28, 25, 23, 0.06);
+  --shadow-modal: 0 24px 80px rgba(28, 25, 23, 0.14), 0 0 0 1px rgba(28, 25, 23, 0.05);
+  --shadow-popover: 0 8px 30px rgba(28, 25, 23, 0.10), 0 0 0 1px rgba(28, 25, 23, 0.04);
 
-  /* Backdrop */
-  --backdrop-blur: blur(40px) saturate(180%);
-  --backdrop-overlay: rgba(0, 0, 0, 0.18);
+  /* 背景模糊 */
+  --backdrop-blur: blur(32px) saturate(160%);
+  --backdrop-overlay: rgba(28, 25, 23, 0.32);
 
-  /* Transitions */
+  /* 动效 */
   --ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --duration-fast: 0.15s;
@@ -96,15 +106,15 @@ body {
 /* 文本选区配色，呼应主题色 */
 ::selection {
   background: var(--color-accent-soft);
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
 }
 
-/* Subtle grain texture overlay */
+/* 细腻纸纹肌理 */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
-  opacity: 0.025;
+  opacity: 0.03;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   background-size: 256px 256px;
   pointer-events: none;
@@ -160,11 +170,11 @@ ul, ol {
   background: var(--color-text-tertiary);
 }
 
-/* ===== Animations ===== */
+/* ===== 通用动效 ===== */
 
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.35);
+    box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.32);
   }
   70% {
     box-shadow: 0 0 0 10px rgba(37, 99, 235, 0);
@@ -190,7 +200,7 @@ ul, ol {
 }
 
 @keyframes scale-in {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.96); }
   to { opacity: 1; transform: scale(1); }
 }
 
@@ -202,6 +212,12 @@ ul, ol {
 @keyframes toast-out {
   from { opacity: 1; transform: translateX(-50%) translateY(0); }
   to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* 骨架屏微光扫过 */
+@keyframes shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
 }
 
 /* ===== 无障碍：尊重用户的动效偏好 ===== */

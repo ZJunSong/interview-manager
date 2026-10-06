@@ -446,8 +446,8 @@ router.get('/admin/stats', adminMiddleware, (req: AuthRequest, res) => {
     const activeInterviews = db.prepare("SELECT COUNT(*) as count FROM interviews WHERE status = 'active'").get() as { count: number };
     const archivedInterviews = db.prepare("SELECT COUNT(*) as count FROM interviews WHERE status = 'archived'").get() as { count: number };
     
-    const recentUsers = db.prepare('SELECT COUNT(*) as count FROM users WHERE created_at >= datetime("now", "-7 days", "localtime")').get() as { count: number };
-    const recentInterviews = db.prepare('SELECT COUNT(*) as count FROM interviews WHERE created_at >= datetime("now", "-7 days", "localtime")').get() as { count: number };
+    const recentUsers = db.prepare("SELECT COUNT(*) as count FROM users WHERE created_at >= datetime('now', '-7 days', 'localtime')").get() as { count: number };
+    const recentInterviews = db.prepare("SELECT COUNT(*) as count FROM interviews WHERE created_at >= datetime('now', '-7 days', 'localtime')").get() as { count: number };
     
     res.json({
       success: true,

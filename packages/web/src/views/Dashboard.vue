@@ -4,7 +4,7 @@
       <div class="header-left">
         <span class="logo-icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="7" fill="#2563eb"/>
+            <rect width="32" height="32" rx="7" fill="#1c1917"/>
             <circle cx="16" cy="13" r="5" stroke="#fff" stroke-width="2"/>
             <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
           </svg>
@@ -46,7 +46,17 @@
 
       <StatsPanel v-if="interviews.length > 0" :interviews="interviews" />
 
-      <div v-if="loading" class="loading">加载中...</div>
+      <div v-if="loading" class="skeleton-list" aria-label="加载中">
+        <div v-for="n in 3" :key="n" class="skeleton-card">
+          <div class="sk-header">
+            <div class="sk-block sk-title"></div>
+            <div class="sk-block sk-chip"></div>
+          </div>
+          <div class="sk-timeline">
+            <div v-for="d in 10" :key="d" class="sk-block sk-dot"></div>
+          </div>
+        </div>
+      </div>
 
       <EmptyState
         v-else-if="filteredInterviews.length === 0"
@@ -530,11 +540,12 @@ onUnmounted(() => {
 }
 
 .logo {
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
 }
 
 .header-right {
@@ -649,13 +660,13 @@ onUnmounted(() => {
 }
 
 .btn-primary {
-  background: var(--color-accent);
+  background: var(--color-ink);
   color: white;
 }
 
 .btn-primary:hover {
-  background: #1d4ed8;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  background: var(--color-ink-hover);
+  box-shadow: 0 4px 12px rgba(28, 25, 23, 0.18);
 }
 
 .btn-secondary {
@@ -678,11 +689,60 @@ onUnmounted(() => {
   background: #dc2626;
 }
 
-/* ===== 空态与加载 ===== */
-.loading {
-  text-align: center;
-  padding: 60px;
-  color: var(--color-text-tertiary);
+/* ===== 骨架屏加载态 ===== */
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.skeleton-card {
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px 16px;
+  box-shadow: var(--shadow-card);
+}
+
+.sk-block {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    100deg,
+    var(--color-bg-deep) 40%,
+    #f6f5f2 50%,
+    var(--color-bg-deep) 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+.sk-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.sk-title {
+  width: 140px;
+  height: 20px;
+}
+
+.sk-chip {
+  width: 72px;
+  height: 18px;
+  border-radius: var(--radius-full);
+}
+
+.sk-timeline {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 8px 8px;
+}
+
+.sk-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
 }
 
 /* ===== 卡片列表 ===== */
@@ -694,8 +754,8 @@ onUnmounted(() => {
 
 .card {
   background: var(--color-surface-solid);
-  border-radius: var(--radius-md);
-  padding: 20px 24px;
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
   box-shadow: var(--shadow-card);
   transition: box-shadow var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), border-left-color var(--duration-normal) var(--ease-out);
   border-left: 4px solid transparent;
@@ -805,13 +865,13 @@ onUnmounted(() => {
 }
 
 .visit-badge.visit-normal {
-  color: #b7791f;
-  background: rgba(236, 201, 75, 0.15);
+  color: var(--color-warning);
+  background: var(--color-warning-soft);
 }
 
 .visit-badge.visit-warning {
-  color: #c05621;
-  background: rgba(237, 136, 54, 0.12);
+  color: var(--color-orange);
+  background: var(--color-orange-soft);
 }
 
 .visit-badge.visit-danger {
@@ -1068,6 +1128,8 @@ onUnmounted(() => {
   right: 0;
   bottom: 0;
   background: var(--backdrop-overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;

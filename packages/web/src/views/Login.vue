@@ -1,9 +1,19 @@
 <template>
   <div class="auth-page">
+    <div class="auth-bg" aria-hidden="true"></div>
     <div class="auth-card">
-      <h1 class="auth-title">面试记录管理器</h1>
-      <p class="auth-subtitle">登录以管理你的面试数据</p>
-      
+      <div class="auth-brand">
+        <span class="auth-mark">
+          <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="8" fill="#1c1917"/>
+            <circle cx="16" cy="13" r="5" stroke="#fff" stroke-width="2"/>
+            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
+        <h1 class="auth-title">面试记录管理器</h1>
+        <p class="auth-subtitle">登录以管理你的面试数据</p>
+      </div>
+
       <form @submit.prevent="handleSubmit" class="auth-form">
         <div class="form-group">
           <label for="username">用户名</label>
@@ -16,7 +26,7 @@
             autocomplete="username"
           />
         </div>
-        
+
         <div class="form-group">
           <label for="password">密码</label>
           <input
@@ -28,14 +38,14 @@
             autocomplete="current-password"
           />
         </div>
-        
+
         <div v-if="error" class="error-message">{{ error }}</div>
-        
+
         <button type="submit" class="auth-button" :disabled="loading">
           {{ loading ? '登录中...' : '登录' }}
         </button>
       </form>
-      
+
       <div class="auth-footer">
         <p>还没有账号？ <router-link to="/register">立即注册</router-link></p>
       </div>
@@ -57,7 +67,7 @@ const error = ref('');
 async function handleSubmit() {
   loading.value = true;
   error.value = '';
-  
+
   try {
     const data = await login(username.value.trim(), password.value);
     localStorage.setItem('token', data.token);
@@ -77,106 +87,145 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 装饰背景：暖纸上的两团柔光 */
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(560px 420px at 12% 0%, rgba(37, 99, 235, 0.10), transparent 60%),
+    radial-gradient(640px 480px at 96% 100%, rgba(180, 83, 9, 0.08), transparent 60%),
+    var(--color-bg);
 }
 
 .auth-card {
-  background: white;
-  border-radius: 16px;
-  padding: 40px;
+  position: relative;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--color-border);
+  padding: 44px 40px 32px;
   width: 100%;
-  max-width: 400px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  max-width: 410px;
+  box-shadow: var(--shadow-modal);
+  animation: scale-in var(--duration-normal) var(--ease-out);
+}
+
+.auth-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.auth-mark {
+  display: inline-flex;
+  margin-bottom: 14px;
 }
 
 .auth-title {
-  font-size: 28px;
+  font-family: var(--font-display);
+  font-size: 24px;
   font-weight: 700;
-  color: #1a1a1a;
-  text-align: center;
-  margin: 0 0 8px 0;
+  letter-spacing: 0.02em;
+  color: var(--color-text);
+  margin: 0 0 6px 0;
 }
 
 .auth-subtitle {
   font-size: 14px;
-  color: #666;
-  text-align: center;
-  margin: 0 0 32px 0;
+  color: var(--color-text-tertiary);
+  margin: 0;
 }
 
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 18px;
 }
 
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
 }
 
 .form-group label {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-secondary);
 }
 
 .form-group input {
-  padding: 12px 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  padding: 11px 14px;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 10px;
+  font-size: 15px;
+  background: var(--color-surface-solid);
+  transition: border-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.form-group input::placeholder {
+  color: var(--color-text-tertiary);
 }
 
 .form-group input:focus {
-  outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .error-message {
-  color: #e53e3e;
-  font-size: 14px;
+  color: var(--color-danger);
+  font-size: 13px;
   text-align: center;
-  padding: 12px;
-  background: #fff5f5;
-  border-radius: 8px;
+  padding: 10px 12px;
+  background: var(--color-danger-soft);
+  border-radius: var(--radius-sm);
 }
 
 .auth-button {
-  padding: 14px 24px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  margin-top: 4px;
+  padding: 12px 24px;
+  background: var(--color-ink);
+  color: #fff;
   border: none;
-  border-radius: 8px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: background var(--duration-fast) var(--ease-out), transform var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out);
 }
 
 .auth-button:hover:not(:disabled) {
+  background: var(--color-ink-hover);
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 6px 16px rgba(28, 25, 23, 0.18);
+}
+
+.auth-button:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .auth-button:disabled {
-  opacity: 0.7;
+  opacity: 0.65;
   cursor: not-allowed;
 }
 
 .auth-footer {
   margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid var(--color-border);
   text-align: center;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-tertiary);
 }
 
 .auth-footer a {
-  color: #667eea;
+  color: var(--color-accent);
   text-decoration: none;
   font-weight: 500;
 }

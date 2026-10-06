@@ -2,6 +2,13 @@
   <div class="admin-page">
     <header class="header">
       <div class="header-left">
+        <span class="logo-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+            <rect width="32" height="32" rx="7" fill="#1c1917"/>
+            <circle cx="16" cy="13" r="5" stroke="#fff" stroke-width="2"/>
+            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </span>
         <h1 class="logo">管理后台</h1>
       </div>
       <div class="header-right">
@@ -10,10 +17,10 @@
         <button class="logout-btn" @click="handleLogout">退出</button>
       </div>
     </header>
-    
+
     <main class="main">
       <div v-if="loading" class="loading">加载中...</div>
-      
+
       <template v-else>
         <div class="stats-grid">
           <div class="stat-card">
@@ -25,7 +32,7 @@
             <div class="stat-label">总面试记录</div>
           </div>
           <div class="stat-card">
-            <div class="stat-value">{{ stats.activeInterviews }}</div>
+            <div class="stat-value stat-value-accent">{{ stats.activeInterviews }}</div>
             <div class="stat-label">进行中</div>
           </div>
           <div class="stat-card">
@@ -33,7 +40,7 @@
             <div class="stat-label">本周新增用户</div>
           </div>
         </div>
-        
+
         <div class="section">
           <h2 class="section-title">用户管理</h2>
           <table class="data-table">
@@ -49,28 +56,30 @@
             </thead>
             <tbody>
               <tr v-for="u in users" :key="u.id">
-                <td>{{ u.id }}</td>
-                <td>{{ u.username }}</td>
+                <td class="td-muted">{{ u.id }}</td>
+                <td class="td-name">{{ u.username }}</td>
                 <td>
                   <span :class="['role-badge', u.role]">{{ u.role === 'admin' ? '管理员' : '普通用户' }}</span>
                 </td>
-                <td>{{ u.interviewCount || 0 }}</td>
-                <td>{{ formatDate(u.createdAt) }}</td>
+                <td class="td-num">{{ u.interviewCount || 0 }}</td>
+                <td class="td-muted td-num">{{ formatDate(u.createdAt) }}</td>
                 <td>
-                  <button
-                    v-if="u.id !== user?.id"
-                    class="btn-icon"
-                    @click="toggleRole(u)"
-                  >
-                    {{ u.role === 'admin' ? '设为用户' : '设为管理员' }}
-                  </button>
-                  <button
-                    v-if="u.id !== user?.id"
-                    class="btn-icon btn-danger"
-                    @click="confirmDelete(u)"
-                  >
-                    删除
-                  </button>
+                  <div class="row-actions">
+                    <button
+                      v-if="u.id !== user?.id"
+                      class="btn-icon"
+                      @click="toggleRole(u)"
+                    >
+                      {{ u.role === 'admin' ? '设为用户' : '设为管理员' }}
+                    </button>
+                    <button
+                      v-if="u.id !== user?.id"
+                      class="btn-icon btn-danger"
+                      @click="confirmDelete(u)"
+                    >
+                      删除
+                    </button>
+                  </div>
                 </td>
               </tr>
             </tbody>
@@ -78,7 +87,7 @@
         </div>
       </template>
     </main>
-    
+
     <div v-if="showDeleteDialog" class="modal-overlay" @click.self="showDeleteDialog = false">
       <div class="modal modal-small">
         <h3>确认删除</h3>
@@ -89,7 +98,7 @@
         </div>
       </div>
     </div>
-    
+
     <div v-if="toast.show" class="toast" :class="toast.type">{{ toast.message }}</div>
   </div>
 </template>
@@ -177,23 +186,42 @@ onMounted(() => {
 <style scoped>
 .admin-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--color-bg);
 }
 
+/* ===== 顶栏：与控制台一致的毛玻璃吸顶 ===== */
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  background: white;
-  border-bottom: 1px solid #e0e0e0;
+  padding: 14px 24px;
+  background: var(--color-surface);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  display: inline-flex;
+  align-items: center;
 }
 
 .logo {
-  font-size: 20px;
+  font-family: var(--font-display);
+  font-size: 18px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--color-text);
   margin: 0;
+  letter-spacing: 0.02em;
 }
 
 .header-right {
@@ -203,24 +231,35 @@ onMounted(() => {
 }
 
 .back-link {
-  font-size: 14px;
-  color: #667eea;
+  font-size: 13px;
+  color: var(--color-accent);
   text-decoration: none;
+  font-weight: 500;
+}
+
+.back-link:hover {
+  text-decoration: underline;
 }
 
 .user-info {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .logout-btn {
-  padding: 6px 12px;
+  padding: 6px 14px;
   font-size: 13px;
-  color: #666;
-  background: white;
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
-  cursor: pointer;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-full);
+  transition: all var(--duration-fast) var(--ease-out);
+}
+
+.logout-btn:hover {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
 .main {
@@ -232,47 +271,61 @@ onMounted(() => {
 .loading {
   text-align: center;
   padding: 60px;
-  color: #999;
+  color: var(--color-text-tertiary);
 }
 
+/* ===== 统计卡 ===== */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .stat-card {
-  background: white;
-  border-radius: 12px;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
   padding: 24px;
   text-align: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card);
+  animation: fade-in var(--duration-normal) var(--ease-out);
 }
 
 .stat-value {
   font-size: 32px;
   font-weight: 700;
-  color: #667eea;
+  color: var(--color-text);
   margin-bottom: 4px;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.stat-value-accent {
+  color: var(--color-accent);
 }
 
 .stat-label {
-  font-size: 14px;
-  color: #999;
+  font-size: 13px;
+  color: var(--color-text-tertiary);
 }
 
+/* ===== 用户表格 ===== */
 .section {
-  background: white;
-  border-radius: 12px;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
   padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-card);
+  animation: fade-in var(--duration-normal) var(--ease-out);
 }
 
 .section-title {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  margin: 0 0 20px 0;
+  margin: 0 0 16px 0;
+  color: var(--color-text);
 }
 
 .data-table {
@@ -282,65 +335,103 @@ onMounted(() => {
 
 .data-table th,
 .data-table td {
-  padding: 12px;
+  padding: 12px 12px;
   text-align: left;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.data-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tbody tr {
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.data-table tbody tr:hover {
+  background: var(--color-bg);
 }
 
 .data-table th {
-  font-weight: 600;
-  color: #666;
-  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-tertiary);
+  font-size: 12px;
+  letter-spacing: 0.04em;
 }
 
 .data-table td {
   font-size: 14px;
 }
 
+.td-muted {
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+}
+
+.td-name {
+  font-weight: 600;
+}
+
+.td-num {
+  font-variant-numeric: tabular-nums;
+}
+
 .role-badge {
   display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
+  padding: 2px 10px;
+  border-radius: var(--radius-full);
   font-size: 12px;
   font-weight: 500;
 }
 
 .role-badge.admin {
-  background: #eef2ff;
-  color: #667eea;
+  background: var(--color-accent-soft);
+  color: var(--color-accent-strong);
 }
 
 .role-badge.user {
-  background: #f0f0f0;
-  color: #666;
+  background: var(--color-gray-soft);
+  color: var(--color-text-secondary);
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
 }
 
 .btn-icon {
-  padding: 6px 12px;
+  padding: 5px 12px;
   font-size: 13px;
-  color: #666;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
+  color: var(--color-text-secondary);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .btn-icon:hover {
-  background: #f0f0f0;
+  color: var(--color-text);
+  border-color: var(--color-border-strong);
+  background: var(--color-bg);
 }
 
 .btn-icon.btn-danger:hover {
-  color: #e53e3e;
-  background: #fff5f5;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+  background: var(--color-danger-soft);
 }
 
+/* ===== 弹窗与轻提示 ===== */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--backdrop-overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -348,19 +439,24 @@ onMounted(() => {
 }
 
 .modal {
-  background: white;
-  border-radius: 12px;
+  background: var(--color-surface-solid);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
   padding: 24px;
   width: 100%;
   max-width: 400px;
+  box-shadow: var(--shadow-modal);
+  animation: scale-in var(--duration-normal) var(--ease-out);
 }
 
 .modal h3 {
   margin: 0 0 16px 0;
+  font-size: 18px;
+  color: var(--color-text);
 }
 
 .modal-small p {
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 14px;
   margin: 0 0 20px 0;
 }
@@ -372,22 +468,33 @@ onMounted(() => {
 }
 
 .btn {
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 9px 16px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   border: none;
+  transition: all var(--duration-fast) var(--ease-out);
 }
 
 .btn-secondary {
-  background: #f0f0f0;
-  color: #666;
+  background: var(--color-surface-solid);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-strong);
+}
+
+.btn-secondary:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-tertiary);
 }
 
 .btn-danger {
-  background: #e53e3e;
+  background: var(--color-danger);
   color: white;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
 }
 
 .toast {
@@ -395,14 +502,16 @@ onMounted(() => {
   bottom: 24px;
   right: 24px;
   padding: 12px 20px;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
   color: white;
   z-index: 2000;
+  animation: slide-up var(--duration-normal) var(--ease-out);
+  box-shadow: var(--shadow-popover);
 }
 
-.toast.success { background: #38a169; }
-.toast.error { background: #e53e3e; }
+.toast.success { background: var(--color-success); }
+.toast.error { background: var(--color-danger); }
 
 @media (max-width: 768px) {
   .data-table {
