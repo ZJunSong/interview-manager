@@ -235,10 +235,13 @@ onMounted(() => {
   color: var(--color-accent);
   text-decoration: none;
   font-weight: 500;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .back-link:hover {
-  text-decoration: underline;
+  background: var(--color-accent-soft);
 }
 
 .user-info {

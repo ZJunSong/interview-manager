@@ -68,7 +68,6 @@
           v-for="group in companyGroups"
           :key="group.company"
           class="card"
-          :class="getVisitStatusClass(group.latestVisit)"
           :data-company="group.company"
         >
           <div class="card-header">
@@ -287,9 +286,10 @@ function getVisitStatusClass(lastVisitedAt?: string): string {
   const lastVisit = new Date(lastVisitedAt).getTime();
   const hoursSinceVisit = (Date.now() - lastVisit) / (1000 * 60 * 60);
 
-  if (hoursSinceVisit < 4) return 'visit-fresh';
-  if (hoursSinceVisit < 8) return 'visit-normal';
-  if (hoursSinceVisit < 12) return 'visit-warning';
+  // 阈值放宽：<8h 绿、8-24h 黄、24-48h 橙、超过两天红
+  if (hoursSinceVisit < 8) return 'visit-fresh';
+  if (hoursSinceVisit < 24) return 'visit-normal';
+  if (hoursSinceVisit < 48) return 'visit-warning';
   return 'visit-danger';
 }
 
@@ -564,10 +564,13 @@ onUnmounted(() => {
   color: var(--color-accent);
   text-decoration: none;
   font-weight: 500;
+  padding: 5px 12px;
+  border-radius: var(--radius-full);
+  transition: background var(--duration-fast) var(--ease-out);
 }
 
 .admin-link:hover {
-  text-decoration: underline;
+  background: var(--color-accent-soft);
 }
 
 .logout-btn {
@@ -757,23 +760,13 @@ onUnmounted(() => {
   border-radius: var(--radius-lg);
   padding: 22px 24px;
   box-shadow: var(--shadow-card);
-  transition: box-shadow var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out), border-left-color var(--duration-normal) var(--ease-out);
-  border-left: 4px solid transparent;
+  transition: box-shadow var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out);
 }
 
 .card:hover {
   box-shadow: var(--shadow-card-hover);
   transform: translateY(-2px);
 }
-
-/* 访问状态颜色标记 */
-.card.visit-fresh { border-left-color: var(--color-success); }
-
-.card.visit-normal { border-left-color: #ecc94b; }
-
-.card.visit-warning { border-left-color: #ed8936; }
-
-.card.visit-danger { border-left-color: var(--color-danger); }
 
 .card-header {
   display: flex;
@@ -803,11 +796,17 @@ onUnmounted(() => {
 
 .card-company.has-url {
   cursor: pointer;
-  color: var(--color-accent);
+  color: var(--color-accent-strong);
+  text-decoration: underline;
+  text-decoration-color: rgba(37, 99, 235, 0.30);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 5px;
+  transition: text-decoration-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 
 .card-company.has-url:hover {
-  text-decoration: underline;
+  color: var(--color-accent);
+  text-decoration-color: currentColor;
 }
 
 .url-icon {
@@ -822,8 +821,8 @@ onUnmounted(() => {
 .card-count {
   font-size: 12px;
   color: var(--color-text-tertiary);
-  background: var(--color-gray-soft);
   padding: 2px 10px;
+  border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-full);
 }
 
@@ -913,27 +912,30 @@ onUnmounted(() => {
   max-width: 100%;
 }
 
-.dead-badge {
-  flex-shrink: 0;
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--color-danger);
-  background: var(--color-danger-soft);
-}
-
 .card-position {
   font-size: 13px;
   font-weight: 500;
-  color: var(--color-accent);
-  background: var(--color-accent-soft);
+  color: var(--color-text-secondary);
+  background: var(--color-surface-solid);
+  border: 1px solid var(--color-border-strong);
   padding: 3px 12px;
   border-radius: var(--radius-full);
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* 已挂标签：描边红，与岗位标签同构 */
+.dead-badge {
+  flex-shrink: 0;
+  padding: 2px 9px;
+  border-radius: var(--radius-full);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-danger);
+  background: var(--color-surface-solid);
+  border: 1px solid rgba(220, 38, 38, 0.35);
 }
 
 .card-timeline {
