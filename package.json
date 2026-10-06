@@ -13,40 +13,21 @@
     "typescript"
   ],
   "engines": {
-    "node": ">=18"
+    "node": ">=22.13"
   },
   "scripts": {
-    "dev": "node dev.cjs",
-    "dev:server": "ts-node-dev --respawn --transpile-only server/index.ts",
-    "dev:client": "vite",
-    "build": "npm run clean && npm run build:client && npm run build:server",
-    "build:client": "vite build",
-    "build:server": "tsc -p tsconfig.server.json",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
-    "start": "cross-env NODE_ENV=production node dist/server/index.js",
-    "preview": "npm run build && npm run start",
-    "test": "vitest run",
-    "test:watch": "vitest",
-    "desktop:dev": "pnpm --filter @interview-manager/desktop dev",
-    "desktop:build": "pnpm --filter @interview-manager/desktop build:win",
+    "dev": "pnpm --filter @interview-manager/web dev",
+    "build": "pnpm --filter @interview-manager/web build",
+    "start": "pnpm --filter @interview-manager/web start",
+    "test": "vitest run packages/web/tests",
+    "test:watch": "vitest packages/web/tests",
     "web:dev": "pnpm --filter @interview-manager/web dev",
     "web:build": "pnpm --filter @interview-manager/web build",
     "web:start": "pnpm --filter @interview-manager/web start"
   },
-  "dependencies": {
-    "cors": "^2.8.5",
-    "express": "^4.21.0",
-    "uuid": "^11.1.0"
-  },
   "devDependencies": {
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
     "@types/node": "^22.0.0",
-    "@types/uuid": "^10.0.0",
     "@vitejs/plugin-vue": "^5.2.0",
-    "cross-env": "^7.0.3",
-    "ts-node": "^10.9.2",
-    "ts-node-dev": "^2.0.0",
     "typescript": "^5.7.0",
     "vite": "^6.1.0",
     "vitest": "^4.1.9",

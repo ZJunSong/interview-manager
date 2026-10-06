@@ -1,232 +1,124 @@
-# 面试记录管理器 / Interview Manager
+# InterviewManager · 面试记录管理器
 
-![License](https://img.shields.io/badge/license-MIT-blue)
-![Vue](https://img.shields.io/badge/Vue-3-42b883)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6)
-![Electron](https://img.shields.io/badge/Electron-33-47848f)
+轻量级求职面试进度追踪工具：同时管理多家公司、多个岗位的面试流程，用可视化时间线清晰呈现每一步。
 
-轻量级求职面试进度追踪工具，帮你同时管理多家公司的面试流程，用可视化时间线清晰呈现每个阶段的状态。
+- **10 阶段时间线**：投递 → 测评 → 笔试 → 简历评估 → 一面 → 二面 → 三面 → HR面 → Offer评估 → 正式offer
+- **公司聚合视图**：同公司多部门/多岗位归并为一张卡片，互不干扰
+- **点击推进**：点击当前阶段节点即可标记通过 / 未通过 / 拒绝 / 跳过，流程自动流转
+- **求职统计**：投递总数、进行中、Offer、已挂、面试转化率一目了然
+- **访问追踪**：为公司记录招聘页面链接，访问新鲜度分级提醒（绿 / 黄 / 橙 / 红），不再错过跟进时机
+- **智能排序**：按进度 / 最近访问 / 投递时间 / 公司名排序；已挂流程自动沉底，置顶公司固定最前
+- **搜索过滤**：按公司名或职位名即时过滤
+- **数据导入导出**：JSON 格式一键备份恢复
+- **多用户**：注册登录（JWT 认证），数据按用户隔离；内置管理员后台
 
-![mainpage](imgs/mainpage.png)
-
----
-
-## 🎯 产品版本
-
-| 版本 | 描述 | 数据存储 | 下载/访问 |
-|------|------|----------|----------|
-| **Windows 桌面版** | 下载安装即用，完全离线 | 本地 `%APPDATA%` | [下载](https://github.com/your-username/InterviewManager/releases/latest) |
-| **在线 Web 版** | 浏览器直接使用，多设备同步 | 云端服务器 | [在线使用](https://your-web-app-url.com) |
+技术栈：Vue 3 + TypeScript + Express + SQLite（better-sqlite3），单进程单文件数据库，部署极简。
 
 ---
 
-## ✨ 功能特性
+## 部署方式
 
-- **📊 求职统计看板** — 投递总数、进行中、Offer数、已挂、已拒、面试转化率，一眼看清求职全局
-- **📋 卡片式时间线** — 每家公司独立卡片，10 阶段时间线从投递到正式 Offer
-- **🎨 6 种阶段状态** — 待处理、当前进行中、通过、未通过、拒绝、已跳过，各有独立视觉样式
-- **⚡ 智能推进** — 点击当前阶段节点即可弹出操作面板，通过/未通过/跳过/拒绝一键切换
-- **🔍 搜索与排序** — 按公司名或职位搜索，支持按时间、名称、进度排序
-- **📝 自动补全** — 内置 35+ 知名科技公司和常见职位名称
-- **⌨️ 键盘操作** — Enter、方向键、Escape 完成所有操作
-- **💾 数据持久化** — 支持导入导出备份
-- **♿ 无障碍** — 键盘焦点环、屏幕阅读器标签
-- **🔒 数据安全** — 原子写入防损坏、写入串行化防并发覆盖
+二选一：个人使用推荐**本地部署**（无需服务器），多人多设备使用选择**服务器部署**（Docker）。
 
----
+### 方式一：本地部署（Node.js 直接运行）
 
-## 🚀 快速开始
-
-### Windows 桌面版
-
-1. 从 [GitHub Releases](https://github.com/your-username/InterviewManager/releases/latest) 下载安装包
-2. 双击 `InterviewManager-Setup-x.x.x.exe` 运行安装程序
-3. 按照向导完成安装
-4. 双击桌面图标启动应用
-
-**特点：**
-- 无需安装 Node.js，双击即用
-- 数据存储在本地，完全离线可用
-- 无账号要求，隐私完全自主
-
-### 在线 Web 版
-
-1. 访问 [在线使用页面](https://your-web-app-url.com)
-2. 注册账号或登录已有账号
-3. 开始添加面试记录
-
-**特点：**
-- 无需安装，浏览器直接使用
-- 多设备同步，随时随地访问
-- 数据云端存储，自动备份
-
-### 开发者模式
+前置要求：[Node.js](https://nodejs.org/) ≥ 22.13（pnpm 由 corepack 自动启用）
 
 ```bash
-git clone https://github.com/your-username/InterviewManager.git
-cd InterviewManager
-pnpm install
-pnpm run dev
-```
+# 1. 获取代码
+git clone https://github.com/jovanzhang6/interview-manager.git
+cd interview-manager
 
-访问 http://localhost:5173
-
----
-
-## 📦 项目结构
-
-```
-InterviewManager/
-├── packages/
-│   ├── desktop/          # Windows 桌面版（Electron）
-│   │   ├── electron/     # Electron 主进程
-│   │   ├── server/       # 本地 Express 服务器
-│   │   └── src/          # Vue 前端
-│   │
-│   ├── web/              # 在线 Web 版
-│   │   ├── server/       # Express + 用户认证
-│   │   ├── src/          # Vue 前端（支持登录）
-│   │   ├── docker-compose.yml
-│   │   └── Dockerfile
-│   │
-│   └── shared/           # 共享代码
-│       ├── components/   # Vue 组件（100% 复用）
-│       ├── types/        # 类型定义
-│       └── utils/        # 工具函数
-│
-├── website/              # 官网
-│   ├── index.html        # 首页
-│   ├── download/         # 下载页
-│   ├── online/           # 在线使用页
-│   ├── docs/             # 使用文档
-│   └── donate/           # 打赏页
-│
-└── src/                  # 原始代码（保持不变）
-```
-
----
-
-## 🛠 技术栈
-
-| 层 | 技术 |
-|---|---|
-| 前端框架 | Vue 3 + Composition API + TypeScript |
-| 构建工具 | Vite 6 |
-| 后端 | Express 4 + TypeScript |
-| 桌面打包 | Electron + electron-builder |
-| 用户认证 | JWT + bcrypt |
-| 数据库（Web 版） | SQLite |
-| 部署 | Docker Compose |
-| 安装包分发 | GitHub Releases |
-
----
-
-## 🔧 开发命令
-
-```bash
-# 安装依赖
+# 2. 安装依赖
+corepack enable
 pnpm install
 
-# 开发模式（同时启动前后端）
-pnpm run dev
+# 3. 构建
+pnpm build
 
-# 桌面版开发
-pnpm run desktop:dev
-
-# Web 版开发
-pnpm run web:dev
-
-# 构建桌面版安装包
-pnpm run desktop:build
-
-# 构建 Web 版
-pnpm run web:build
-
-# 启动 Web 版生产服务器
-pnpm run web:start
+# 4. 启动
+pnpm start
 ```
 
----
+启动后访问 **http://localhost:3001**，注册账号即可使用。
 
-## 🐳 Docker 部署
+- 数据保存在 `packages/web/data/` 目录（SQLite 单文件 `app.db`）
+- **备份 = 复制这个目录**；恢复 = 把目录放回去
+- 换端口：`PORT=8080 pnpm start`（Windows PowerShell：`$env:PORT=8080; pnpm start`）
+
+### 方式二：服务器部署（Docker Compose）
+
+前置要求：服务器（1核1G 即可）安装好 Docker
 
 ```bash
-cd packages/web
+# 1. 获取代码
+git clone https://github.com/jovanzhang6/interview-manager.git
+cd interview-manager/packages/web
 
-# 复制环境变量配置
-cp .env.example .env
+# 2. 生成配置（JWT_SECRET 缺失时容器会拒绝启动）
+cat > .env << EOF
+JWT_SECRET=$(openssl rand -hex 32)
+HTTP_PORT=80
+EOF
 
-# 修改 .env 中的 JWT_SECRET
-
-# 启动服务
-docker compose up -d
-
-# 访问 http://localhost:3001
+# 3. 构建并启动
+docker compose up -d --build
 ```
 
----
+启动后访问 `http://服务器IP`。
 
-## 📝 数据迁移
+- 首次启动自动创建管理员账号：**admin / admin123**，请立即登录修改密码
+- 数据保存在 Docker volume `web_app-data` 中，更新代码 / 重建容器均不影响数据
+- 数据备份：
 
-### 从桌面版迁移到 Web 版
+  ```bash
+  docker run --rm -v web_app-data:/data -v $(pwd):/backup alpine tar czf /backup/app-data-backup.tar.gz -C /data .
+  ```
 
-1. 在桌面版中导出数据（JSON 文件）
-2. 在 Web 版中登录账号
-3. 使用导入功能，选择"合并"模式
+- 更新版本：
 
-### 从 Web 版迁移到桌面版
-
-1. 在 Web 版中导出数据（JSON 文件）
-2. 在桌面版中使用导入功能
-
----
-
-## 🤝 贡献
-
-欢迎提交 Issue 和 Pull Request！
-
-1. Fork 本仓库
-2. 创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交你的更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 打开一个 Pull Request
+  ```bash
+  git pull && docker compose up -d --build
+  ```
 
 ---
 
-## 📄 许可证
+## 数据迁移
 
-本项目基于 [MIT](LICENSE) 许可证开源。
+从旧版 **Windows 桌面版**迁移：在桌面版中导出 JSON 文件，登录 Web 版后点击工具栏「导入」上传即可。两种导入模式：
 
----
+- **合并模式**：相同 ID 的记录跳过，只导入新记录（推荐）
+- **覆盖模式**：清空当前账号数据后全量导入
 
-## 💚 支持
-
-如果这个工具对你有帮助，可以请作者喝杯咖啡 ☕
-
-[打赏页面](website/donate/)
+导出文件为标准 JSON 数组，直接导入即可，无需转换。
 
 ---
 
-## English
-
-A lightweight job interview progress tracker that helps you manage multiple company interviews simultaneously with a visual timeline.
-
-### Versions
-
-- **Windows Desktop**: Download from [GitHub Releases](https://github.com/your-username/InterviewManager/releases/latest)
-- **Online Web**: [Try it online](https://your-web-app-url.com)
-
-### Features
-
-Statistics dashboard, 10-stage timeline, 6 stage statuses, smart auto-advance, autocomplete for 35+ tech companies, full keyboard navigation, import/export backup.
-
-### Quick Start
+## 本地开发
 
 ```bash
-git clone https://github.com/your-username/InterviewManager.git
-cd InterviewManager
 pnpm install
-pnpm run dev
+
+# 前后端热更新开发模式（后端 :3001，前端 :5173 自动代理）
+pnpm dev
+
+# 运行测试（后端接口集成测试 + 前端排序分组单测）
+pnpm test
 ```
 
-Open http://localhost:5173. See the [Chinese documentation](#功能特性) for full details.
+目录结构：
+
+```
+packages/
+├── web/       # Web 版（Vue3 前端 + Express 后端 + SQLite）
+│   ├── server/    # 服务端（认证、面试记录、管理员接口）
+│   ├── src/       # 前端（视图、组件、分组排序逻辑）
+│   └── tests/     # 测试
+└── shared/    # 前后端共享类型与组件
+```
+
+---
+
+## License
+
+[MIT](LICENSE)

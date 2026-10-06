@@ -15,7 +15,6 @@ packages/web/data
 packages/web/tmp-tsc
 
 # 与网页版镜像无关的目录
-packages/desktop
 website
 docs
 
