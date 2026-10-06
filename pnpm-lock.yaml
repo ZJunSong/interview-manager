@@ -27,13 +27,8 @@ importers:
         specifier: ^3.5.0
         version: 3.5.39(typescript@5.9.3)
 
-  packages/shared: {}
-
   packages/web:
     dependencies:
-      '@interview-manager/shared':
-        specifier: workspace:*
-        version: link:../shared
       bcryptjs:
         specifier: ^2.4.3
         version: 2.4.3

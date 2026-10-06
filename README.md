@@ -109,12 +109,11 @@ pnpm test
 目录结构：
 
 ```
-packages/
-├── web/       # Web 版（Vue3 前端 + Express 后端 + SQLite）
-│   ├── server/    # 服务端（认证、面试记录、管理员接口）
-│   ├── src/       # 前端（视图、组件、分组排序逻辑）
-│   └── tests/     # 测试
-└── shared/    # 前后端共享类型与组件
+packages/web/          # Web 版（Vue3 前端 + Express 后端 + SQLite）
+├── server/            # 服务端（认证、面试记录、管理员接口）
+├── src/               # 前端（视图、组件、分组排序逻辑）
+│   └── utils/grouping.ts  # 公司分组与排序纯函数
+└── tests/             # 测试（接口集成 + 排序单测）
 ```
 
 ---

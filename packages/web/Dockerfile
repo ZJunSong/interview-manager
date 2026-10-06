@@ -11,7 +11,6 @@ RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 
 # 先只复制依赖清单，充分利用 Docker 层缓存
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/shared/package.json ./packages/shared/
 COPY packages/web/package.json ./packages/web/
 
 # 说明：lockfile 中包含桌面版（desktop）的 importer，但镜像内不复制其 package.json，
@@ -19,7 +18,6 @@ COPY packages/web/package.json ./packages/web/
 RUN pnpm install --no-frozen-lockfile
 
 # 复制源码（.dockerignore 已排除 node_modules / dist / data，杜绝旧产物污染）
-COPY packages/shared/ ./packages/shared/
 COPY packages/web/ ./packages/web/
 
 WORKDIR /app/packages/web
@@ -42,11 +40,8 @@ WORKDIR /app
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/packages/web/node_modules ./packages/web/node_modules
 
-# 前端资产 + 服务端编译产物
+# 前端资产 + 服务端编译产物 + 生产依赖
 COPY --from=builder /app/packages/web/dist ./packages/web/dist
-
-# shared 以 TS 源码形式被前端引用，保留源码以备服务端将来引用
-COPY packages/shared/ ./packages/shared/
 
 # 数据目录归属 node 用户，容器以非 root 运行
 RUN mkdir -p /app/data && chown -R node:node /app/data
