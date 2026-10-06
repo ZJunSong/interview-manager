@@ -80,7 +80,6 @@
                 @click="group.url && handleVisitCompany(group)"
               >
                 {{ group.company }}
-                <span v-if="group.url" class="url-icon">↗</span>
               </h2>
               <span class="card-count">{{ group.items.length }} 个岗位</span>
             </div>
@@ -791,22 +790,13 @@ onUnmounted(() => {
   text-decoration: underline;
   text-decoration-color: rgba(37, 99, 235, 0.30);
   text-decoration-thickness: 1.5px;
-  text-underline-offset: 5px;
+  text-underline-offset: 2px;
   transition: text-decoration-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
 }
 
 .card-company.has-url:hover {
   color: var(--color-accent);
   text-decoration-color: currentColor;
-}
-
-.url-icon {
-  font-size: 14px;
-  opacity: 0.7;
-}
-
-.card-company.has-url:hover .url-icon {
-  opacity: 1;
 }
 
 .card-count {
