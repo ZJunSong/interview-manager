@@ -931,27 +931,60 @@ onUnmounted(() => {
 
 .row-actions {
   display: flex;
-  gap: 6px;
+  gap: 2px;
   flex-shrink: 0;
+  opacity: 0;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.position-row:hover .row-actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .row-actions {
+    opacity: 1;
+  }
 }
 
 .btn-icon {
-  padding: 6px 14px;
+  padding: 5px 10px;
   font-size: 13px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-solid);
-  border: 1px solid var(--color-border);
+  color: var(--color-text-tertiary);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-out);
 }
 
-/* 置顶按钮：贴右缘固定宽度，所有卡片的按钮严格对齐（标签在左侧伸缩） */
+/* 置顶按钮：贴右缘固定宽度对齐；未置顶时 hover 卡片才浮现，已置顶常显为主题色文字 */
 .pin-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-width: 70px;
+  opacity: 0;
+}
+
+.card:hover .pin-btn,
+.pin-btn.pin-active {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .pin-btn {
+    opacity: 1;
+  }
+}
+
+.pin-btn.pin-active {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.pin-btn.pin-active:hover {
+  background: var(--color-accent-soft);
 }
 
 .pin-btn.pin-active {
@@ -966,19 +999,13 @@ onUnmounted(() => {
   background: linear-gradient(180deg, rgba(37, 99, 235, 0.045), rgba(37, 99, 235, 0) 42%), var(--color-surface-solid);
 }
 
-.card.pinned:hover {
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.06), 0 12px 32px rgba(37, 99, 235, 0.10), 0 0 0 1px rgba(37, 99, 235, 0.08);
-}
-
 .btn-icon:hover {
   color: var(--color-text);
-  border-color: var(--color-border-strong);
   background: var(--color-bg);
 }
 
 .btn-icon.btn-danger:hover {
   color: var(--color-danger);
-  border-color: var(--color-danger);
   background: var(--color-danger-soft);
 }
 

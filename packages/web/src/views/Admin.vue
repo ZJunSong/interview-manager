@@ -403,11 +403,11 @@ onMounted(() => {
 }
 
 .btn-icon {
-  padding: 5px 12px;
+  padding: 5px 10px;
   font-size: 13px;
-  color: var(--color-text-secondary);
-  background: var(--color-surface-solid);
-  border: 1px solid var(--color-border);
+  color: var(--color-text-tertiary);
+  background: transparent;
+  border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: all var(--duration-fast) var(--ease-out);
@@ -415,13 +415,11 @@ onMounted(() => {
 
 .btn-icon:hover {
   color: var(--color-text);
-  border-color: var(--color-border-strong);
   background: var(--color-bg);
 }
 
 .btn-icon.btn-danger:hover {
   color: var(--color-danger);
-  border-color: var(--color-danger);
   background: var(--color-danger-soft);
 }
 
