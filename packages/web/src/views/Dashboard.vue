@@ -693,7 +693,7 @@ onUnmounted(() => {
 .skeleton-card {
   background: var(--color-surface-solid);
   border-radius: var(--radius-lg);
-  padding: 22px 24px 16px;
+  padding: 18px 22px 14px;
   box-shadow: var(--shadow-card);
 }
 
@@ -713,7 +713,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 22px;
+  margin-bottom: 16px;
 }
 
 .sk-title {
@@ -743,13 +743,13 @@ onUnmounted(() => {
 .card-list {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .card {
   background: var(--color-surface-solid);
   border-radius: var(--radius-lg);
-  padding: 22px 24px;
+  padding: 18px 22px;
   box-shadow: var(--shadow-card);
   transition: box-shadow var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out);
 }
@@ -763,7 +763,7 @@ onUnmounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   gap: 12px;
 }
 
@@ -879,7 +879,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 10px 0;
+  padding: 7px 0;
 }
 
 .position-row + .position-row {
@@ -936,7 +936,7 @@ onUnmounted(() => {
   align-items: flex-start;
   gap: 0;
   overflow-x: auto;
-  padding: 10px 0 4px;
+  padding: 6px 0 2px;
 }
 
 .row-actions {
@@ -1028,7 +1028,7 @@ onUnmounted(() => {
   border-radius: 50%;
   background: var(--color-surface-solid);
   border: 2px solid var(--color-pending-border);
-  margin-bottom: 8px;
+  margin-bottom: 5px;
   transition: transform var(--duration-fast) var(--ease-out);
   display: flex;
   align-items: center;
@@ -1049,8 +1049,8 @@ onUnmounted(() => {
 }
 
 .status-pass .node-dot {
-  background: var(--color-success);
-  border-color: var(--color-success);
+  background: var(--color-connector-pass);
+  border-color: var(--color-connector-pass);
 }
 
 .status-pass .node-dot::after {

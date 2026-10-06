@@ -43,7 +43,8 @@
   /* 时间线专用 */
   --color-pending-border: #d6d3ce;
   --color-connector: #e5e2dc;
-  --color-connector-pass: var(--color-success);
+  /* 已通过节点与连接线用明亮浅绿，避免大面积深绿显得沉闷；文字仍用深绿保证可读性 */
+  --color-connector-pass: #22c55e;
 
   /* 间距（8px 基准） */
   --space-xs: 4px;
