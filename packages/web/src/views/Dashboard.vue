@@ -84,6 +84,13 @@
               <span class="card-count">{{ group.items.length }} 个岗位</span>
             </div>
             <div class="card-right">
+              <span
+                v-if="group.url && !isGroupTerminated(group)"
+                class="visit-badge"
+                :class="group.latestVisit ? getVisitStatusClass(group.latestVisit) : 'visit-never'"
+              >
+                <span class="visit-dot"></span>{{ group.latestVisit ? getVisitStatusLabel(group.latestVisit) : '未访问' }}
+              </span>
               <button
                 class="btn-icon pin-btn"
                 :class="{ 'pin-active': group.pinned }"
@@ -92,13 +99,6 @@
               >
                 {{ group.pinned ? '已置顶' : '置顶' }}
               </button>
-              <span
-                v-if="group.url && !isGroupTerminated(group)"
-                class="visit-badge"
-                :class="group.latestVisit ? getVisitStatusClass(group.latestVisit) : 'visit-never'"
-              >
-                <span class="visit-dot"></span>{{ group.latestVisit ? getVisitStatusLabel(group.latestVisit) : '未访问' }}
-              </span>
             </div>
           </div>
 
@@ -946,11 +946,12 @@ onUnmounted(() => {
   transition: all var(--duration-fast) var(--ease-out);
 }
 
-/* 置顶按钮：图钉 SVG 与文字对齐 */
+/* 置顶按钮：贴右缘固定宽度，所有卡片的按钮严格对齐（标签在左侧伸缩） */
 .pin-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  min-width: 70px;
 }
 
 .pin-btn.pin-active {
