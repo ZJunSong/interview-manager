@@ -6,21 +6,19 @@ FROM node:22 AS builder
 
 WORKDIR /app
 
-# pnpm 11 与本地开发一致（lockfile 为 v9.0 格式，allowBuilds 字段需 pnpm 10+ 才生效）
+# pnpm 11 与 lockfile（v9.0 格式）匹配
 RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 
 # 先只复制依赖清单，充分利用 Docker 层缓存
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY packages/web/package.json ./packages/web/
+COPY package.json pnpm-lock.yaml ./
 
-# 说明：lockfile 中包含桌面版（desktop）的 importer，但镜像内不复制其 package.json，
-# 因此无法使用 --frozen-lockfile；桌面版不在镜像依赖树内，不受影响
 RUN pnpm install --no-frozen-lockfile
 
 # 复制源码（.dockerignore 已排除 node_modules / dist / data，杜绝旧产物污染）
-COPY packages/web/ ./packages/web/
-
-WORKDIR /app/packages/web
+COPY server/ ./server/
+COPY src/ ./src/
+COPY tests/ ./tests/
+COPY index.html vite.config.ts tsconfig.json tsconfig.server.json ./
 
 # 构建前端（dist/index.html + dist/assets/）并编译服务端（dist/server/*.js）
 RUN pnpm run build
@@ -38,20 +36,17 @@ WORKDIR /app
 # 直接复用阶段 1 已装好的依赖（pnpm 的 symlink 均为 /app 内相对路径，拷贝后仍有效），
 # 不再二次联网安装：构建更快，且 better-sqlite3 编译产物与运行时 Node 版本严格一致
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages/web/node_modules ./packages/web/node_modules
 
-# 前端资产 + 服务端编译产物 + 生产依赖
-COPY --from=builder /app/packages/web/dist ./packages/web/dist
+# 前端资产 + 服务端编译产物
+COPY --from=builder /app/dist ./dist
 
 # 数据目录归属 node 用户，容器以非 root 运行
 RUN mkdir -p /app/data && chown -R node:node /app/data
 
 # 入口脚本：以 root 启动自动修正数据目录属主，再降权为 node 运行服务进程
 # （postgres/redis 官方镜像同款模式，杜绝数据卷属主不匹配导致的启动失败）
-COPY packages/web/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh && which setpriv
-
-WORKDIR /app/packages/web
 
 EXPOSE 3001
 

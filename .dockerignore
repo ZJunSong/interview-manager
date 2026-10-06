@@ -1,18 +1,15 @@
 # ============================================
-# Docker 构建上下文排除清单
-# 构建上下文为仓库根目录（见 docker-compose.yml 的 context: ../..）
+# Docker 构建上下文排除清单（构建上下文为仓库根目录）
 # ============================================
 
 # 依赖目录：镜像内重新安装，绝不能把本地 node_modules 带进去
-**/node_modules
+node_modules
 
 # 构建产物：镜像内重新构建，防止本地旧 dist 污染线上前端
-**/dist
-**/dist-desktop
+dist
 
-# 本地运行时数据（含本地测试数据库，严禁进生产镜像）
-packages/web/data
-packages/web/tmp-tsc
+# 本地运行时数据（含本地数据库，严禁进生产镜像）
+data
 
 # 版本库与工具目录
 .git
@@ -23,4 +20,4 @@ packages/web/tmp-tsc
 # 本地环境变量与密钥
 .env
 .env.*
-**/*.log
+*.log

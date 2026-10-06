@@ -42,7 +42,7 @@ pnpm start
 
 启动后访问 **http://localhost:3001**，注册账号即可使用。
 
-- 数据保存在 `packages/web/data/` 目录（SQLite 单文件 `app.db`）
+- 数据保存在 `data/` 目录（SQLite 单文件 `app.db`）
 - **备份 = 复制这个目录**；恢复 = 把目录放回去
 - 换端口：`PORT=8080 pnpm start`（Windows PowerShell：`$env:PORT=8080; pnpm start`）
 
@@ -53,7 +53,7 @@ pnpm start
 ```bash
 # 1. 获取代码
 git clone https://github.com/jovanzhang6/interview-manager.git
-cd interview-manager/packages/web
+cd interview-manager
 
 # 2. 生成配置（JWT_SECRET 缺失时容器会拒绝启动）
 cat > .env << EOF
@@ -109,11 +109,11 @@ pnpm test
 目录结构：
 
 ```
-packages/web/          # Web 版（Vue3 前端 + Express 后端 + SQLite）
-├── server/            # 服务端（认证、面试记录、管理员接口）
-├── src/               # 前端（视图、组件、分组排序逻辑）
-│   └── utils/grouping.ts  # 公司分组与排序纯函数
-└── tests/             # 测试（接口集成 + 排序单测）
+server/                 # 服务端（Express：认证、面试记录、管理员接口）
+src/                    # 前端（Vue3：视图、组件、分组排序逻辑）
+tests/                  # 测试（接口集成 + 排序单测）
+Dockerfile              # 多阶段构建（构建产物自检、非 root 运行、自动修数据卷属主）
+docker-compose.yml      # 服务器部署编排（app + nginx 反代）
 ```
 
 ---
