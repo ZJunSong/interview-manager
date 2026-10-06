@@ -10,7 +10,8 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@11.24.0 --activate
 
 # 先只复制依赖清单，充分利用 Docker 层缓存
-COPY package.json pnpm-lock.yaml ./
+# pnpm-workspace.yaml 含 allowBuilds 构建批准（better-sqlite3/esbuild），缺失会导致 install 被拒
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 RUN pnpm install --no-frozen-lockfile
 
