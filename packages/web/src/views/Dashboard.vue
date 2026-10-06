@@ -68,6 +68,7 @@
           v-for="group in companyGroups"
           :key="group.company"
           class="card"
+          :class="{ pinned: group.pinned }"
           :data-company="group.company"
         >
           <div class="card-header">
@@ -78,12 +79,6 @@
                 :title="group.url ? '点击访问招聘页面，该公司全部岗位标记为已访问' : ''"
                 @click="group.url && handleVisitCompany(group)"
               >
-                <span v-if="group.pinned" class="pin-flag" title="已置顶">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 17v5"/>
-                    <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
-                  </svg>
-                </span>
                 {{ group.company }}
                 <span v-if="group.url" class="url-icon">↗</span>
               </h2>
@@ -96,10 +91,6 @@
                 :title="group.pinned ? '取消置顶' : '置顶该公司，固定显示在最前'"
                 @click="togglePin(group)"
               >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 17v5"/>
-                  <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/>
-                </svg>
                 {{ group.pinned ? '已置顶' : '置顶' }}
               </button>
               <span
@@ -978,12 +969,14 @@ onUnmounted(() => {
   background: var(--color-accent-soft);
 }
 
-/* 已置顶公司在公司名旁的图钉标识 */
-.pin-flag {
-  display: inline-flex;
-  align-items: center;
-  color: var(--color-accent);
-  flex-shrink: 0;
+/* 置顶卡片：主题色细边框 + 顶部淡蓝晕染底，不用图标靠卡片本身区分 */
+.card.pinned {
+  border: 1px solid rgba(37, 99, 235, 0.30);
+  background: linear-gradient(180deg, rgba(37, 99, 235, 0.045), rgba(37, 99, 235, 0) 42%), var(--color-surface-solid);
+}
+
+.card.pinned:hover {
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.06), 0 12px 32px rgba(37, 99, 235, 0.10), 0 0 0 1px rgba(37, 99, 235, 0.08);
 }
 
 .btn-icon:hover {
