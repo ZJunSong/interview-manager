@@ -1,13 +1,14 @@
 <template>
   <div class="auth-page">
     <div class="auth-bg" aria-hidden="true"></div>
+    <div class="auth-theme"><ThemeToggle /></div>
     <div class="auth-card">
       <div class="auth-brand">
         <span class="auth-mark">
           <svg width="40" height="40" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="8" fill="#1c1917"/>
-            <circle cx="16" cy="13" r="5" stroke="#fff" stroke-width="2"/>
-            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            <rect width="32" height="32" rx="8" fill="var(--color-ink)"/>
+            <circle cx="16" cy="13" r="5" stroke="var(--color-on-ink)" stroke-width="2"/>
+            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="var(--color-on-ink)" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </span>
         <h1 class="auth-title">面试记录管理器</h1>
@@ -57,6 +58,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login } from '../api';
+import ThemeToggle from '../components/ThemeToggle.vue';
 
 const router = useRouter();
 const username = ref('');
@@ -87,9 +89,16 @@ async function handleSubmit() {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding: 76px 20px 28px;
   position: relative;
   overflow: hidden;
+}
+
+.auth-theme {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 1;
 }
 
 /* 装饰背景：暖纸上的两团柔光 */
@@ -97,8 +106,8 @@ async function handleSubmit() {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(560px 420px at 12% 0%, rgba(37, 99, 235, 0.10), transparent 60%),
-    radial-gradient(640px 480px at 96% 100%, rgba(180, 83, 9, 0.08), transparent 60%),
+    radial-gradient(560px 420px at 12% 0%, var(--color-accent-soft), transparent 60%),
+    radial-gradient(640px 480px at 96% 100%, var(--color-warning-soft), transparent 60%),
     var(--color-bg);
 }
 
@@ -191,7 +200,7 @@ async function handleSubmit() {
   margin-top: 4px;
   padding: 12px 24px;
   background: var(--color-ink);
-  color: #fff;
+  color: var(--color-on-ink);
   border: none;
   border-radius: 10px;
   font-size: 15px;
@@ -203,7 +212,7 @@ async function handleSubmit() {
 .auth-button:hover:not(:disabled) {
   background: var(--color-ink-hover);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(28, 25, 23, 0.18);
+  box-shadow: var(--shadow-button);
 }
 
 .auth-button:active:not(:disabled) {
