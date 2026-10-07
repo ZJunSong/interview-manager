@@ -4,14 +4,15 @@
       <div class="header-left">
         <span class="logo-icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="7" fill="#1c1917"/>
-            <circle cx="16" cy="13" r="5" stroke="#fff" stroke-width="2"/>
-            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            <rect width="32" height="32" rx="7" fill="var(--color-ink)"/>
+            <circle cx="16" cy="13" r="5" stroke="var(--color-on-ink)" stroke-width="2"/>
+            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="var(--color-on-ink)" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </span>
         <h1 class="logo">面试记录管理器</h1>
       </div>
       <div class="header-right">
+        <ThemeToggle />
         <span class="user-info">{{ user?.username }}</span>
         <router-link v-if="user?.role === 'admin'" to="/admin" class="admin-link">管理后台</router-link>
         <button class="logout-btn" @click="handleLogout">退出</button>
@@ -211,6 +212,7 @@ import { fetchInterviews, createInterview, updateStage, deleteInterview, updateI
 import { filterInterviews, groupByCompany, sortGroups, isInterviewTerminated, isGroupTerminated, type CompanyGroup, type SortMode } from '../utils/grouping';
 import StatsPanel from '../components/StatsPanel.vue';
 import EmptyState from '../components/EmptyState.vue';
+import ThemeToggle from '../components/ThemeToggle.vue';
 
 const router = useRouter();
 const user = ref<any>(null);
@@ -654,12 +656,12 @@ onUnmounted(() => {
 
 .btn-primary {
   background: var(--color-ink);
-  color: white;
+  color: var(--color-on-ink);
 }
 
 .btn-primary:hover {
   background: var(--color-ink-hover);
-  box-shadow: 0 4px 12px rgba(28, 25, 23, 0.18);
+  box-shadow: var(--shadow-button);
 }
 
 .btn-secondary {
@@ -675,11 +677,11 @@ onUnmounted(() => {
 
 .btn-danger {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-on-status);
 }
 
 .btn-danger:hover {
-  background: #dc2626;
+  background: var(--color-danger-hover);
 }
 
 /* ===== 骨架屏加载态 ===== */
@@ -701,7 +703,7 @@ onUnmounted(() => {
   background: linear-gradient(
     100deg,
     var(--color-bg-deep) 40%,
-    #f6f5f2 50%,
+    var(--color-shimmer) 50%,
     var(--color-bg-deep) 60%
   );
   background-size: 200% 100%;
@@ -788,7 +790,7 @@ onUnmounted(() => {
   cursor: pointer;
   color: var(--color-accent-strong);
   text-decoration: underline;
-  text-decoration-color: rgba(37, 99, 235, 0.30);
+  text-decoration-color: var(--color-accent-border);
   text-decoration-thickness: 1.5px;
   text-underline-offset: 2px;
   transition: text-decoration-color var(--duration-fast) var(--ease-out), color var(--duration-fast) var(--ease-out);
@@ -916,7 +918,7 @@ onUnmounted(() => {
   font-weight: 600;
   color: var(--color-danger);
   background: var(--color-surface-solid);
-  border: 1px solid rgba(220, 38, 38, 0.35);
+  border: 1px solid var(--color-danger-border);
 }
 
 .card-timeline {
@@ -995,8 +997,8 @@ onUnmounted(() => {
 
 /* 置顶卡片：主题色细边框 + 顶部淡蓝晕染底，不用图标靠卡片本身区分 */
 .card.pinned {
-  border: 1px solid rgba(37, 99, 235, 0.30);
-  background: linear-gradient(180deg, rgba(37, 99, 235, 0.045), rgba(37, 99, 235, 0) 42%), var(--color-surface-solid);
+  border: 1px solid var(--color-accent-border);
+  background: linear-gradient(180deg, var(--color-pinned-highlight), transparent 42%), var(--color-surface-solid);
 }
 
 .btn-icon:hover {
@@ -1063,7 +1065,7 @@ onUnmounted(() => {
   font-size: 10px;
   font-weight: 700;
   line-height: 1;
-  color: white;
+  color: var(--color-on-status);
 }
 
 .status-pass .node-dot {
@@ -1248,7 +1250,7 @@ onUnmounted(() => {
   padding: 12px 20px;
   border-radius: var(--radius-sm);
   font-size: 14px;
-  color: white;
+  color: var(--color-on-status);
   z-index: 2000;
   animation: slide-up var(--duration-normal) var(--ease-out);
   box-shadow: var(--shadow-popover);
@@ -1267,6 +1269,18 @@ onUnmounted(() => {
 }
 
 @media (max-width: 600px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .header-right {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-left: auto;
+  }
+
   .toolbar {
     flex-direction: column;
     align-items: stretch;

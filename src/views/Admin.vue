@@ -4,14 +4,15 @@
       <div class="header-left">
         <span class="logo-icon" aria-hidden="true">
           <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-            <rect width="32" height="32" rx="7" fill="#1c1917"/>
-            <circle cx="16" cy="13" r="5" stroke="#fff" stroke-width="2"/>
-            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+            <rect width="32" height="32" rx="7" fill="var(--color-ink)"/>
+            <circle cx="16" cy="13" r="5" stroke="var(--color-on-ink)" stroke-width="2"/>
+            <path d="M6 25c0-4 4-7 10-7s10 3 10 7" stroke="var(--color-on-ink)" stroke-width="2" stroke-linecap="round"/>
           </svg>
         </span>
         <h1 class="logo">管理后台</h1>
       </div>
       <div class="header-right">
+        <ThemeToggle />
         <router-link to="/dashboard" class="back-link">返回前台</router-link>
         <span class="user-info">{{ user?.username }} (管理员)</span>
         <button class="logout-btn" @click="handleLogout">退出</button>
@@ -108,6 +109,7 @@ import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import type { User } from '../types';
 import { getUsers, deleteUser, updateUserRole, getStats } from '../api';
+import ThemeToggle from '../components/ThemeToggle.vue';
 
 const router = useRouter();
 const user = ref<any>(null);
@@ -491,11 +493,11 @@ onMounted(() => {
 
 .btn-danger {
   background: var(--color-danger);
-  color: white;
+  color: var(--color-on-status);
 }
 
 .btn-danger:hover {
-  background: #b91c1c;
+  background: var(--color-danger-hover);
 }
 
 .toast {
@@ -505,7 +507,7 @@ onMounted(() => {
   padding: 12px 20px;
   border-radius: var(--radius-sm);
   font-size: 14px;
-  color: white;
+  color: var(--color-on-status);
   z-index: 2000;
   animation: slide-up var(--duration-normal) var(--ease-out);
   box-shadow: var(--shadow-popover);
@@ -515,6 +517,18 @@ onMounted(() => {
 .toast.error { background: var(--color-danger); }
 
 @media (max-width: 768px) {
+  .header {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 14px 16px;
+  }
+
+  .header-right {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-left: auto;
+  }
+
   .data-table {
     display: block;
     overflow-x: auto;
