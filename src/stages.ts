@@ -40,6 +40,11 @@ export function isHistoryStage(stage: { status?: StageStatus }): boolean {
   return stage.status !== undefined && stage.status !== 'pending' && stage.status !== 'current';
 }
 
+export function isStageActionable(stage: Pick<Stage, 'status'>): boolean {
+  // 未通过或已拒绝的结果允许更正，避免误点后永久锁定流程。
+  return stage.status === 'current' || stage.status === 'fail' || stage.status === 'rejected';
+}
+
 export const STAGE_TYPE_LABELS: Record<StageType, string> = {
   application: '投递',
   interview: '面试',
@@ -101,11 +106,9 @@ export function createStages(definitions: readonly { name: string; type?: StageT
   return stages;
 }
 
-export function mergeStageDefinitions(original: readonly Stage[], definitions: readonly StageDefinition[]): Stage[] | null {
+export function mergeStageDefinitions(original: readonly Stage[], definitions: readonly StageDefinition[]): Stage[] {
   const previous = original.map((stage, index) => ({ ...stage, id: getStageId(stage, index) }));
-  // 历史阶段必须保留原位置；名称与类别可以修改，状态只能从已有记录读取。
-  if (previous.some((stage, index) => isHistoryStage(stage) && definitions[index]?.id !== stage.id)) return null;
-
+  // 各阶段可自由增删重排，保留阶段的已有状态按标识匹配，不受位置变化影响。
   const previousById = new Map(previous.map(stage => [stage.id, stage]));
   const stages = definitions.map((definition, index): Stage => ({
     id: getStageId(definition, index),
@@ -114,7 +117,7 @@ export function mergeStageDefinitions(original: readonly Stage[], definitions: r
     status: previousById.get(definition.id || '')?.status ?? 'pending'
   }));
 
-  // 未完成部分按新顺序接续；失败或拒绝后的流程仍保持终结状态。
+  // 未完成部分按新顺序接续；仍保留失败或拒绝阶段时，流程继续保持终结状态。
   const terminated = stages.some(stage => stage.status === 'fail' || stage.status === 'rejected');
   let hasCurrent = false;
   for (const stage of stages) {

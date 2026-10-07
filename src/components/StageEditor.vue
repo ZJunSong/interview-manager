@@ -3,7 +3,7 @@
     <div class="editor-heading">
       <div>
         <h4 id="stage-editor-title">面试流程 <span>{{ entries.length }} 个阶段</span></h4>
-        <p>{{ editing ? '历史阶段可改名和类型，不能删除或重排；未完成阶段可自由调整。' : '先选择阶段类型，再填写名称。拖动左侧手柄或点击箭头调整顺序。' }}</p>
+        <p>{{ editing ? '所有阶段均可改名、修改类型、删除和排序，包括已进行过的阶段。' : '先选择阶段类型，再填写名称。拖动左侧手柄或点击箭头调整顺序。' }}</p>
       </div>
       <button type="button" class="text-button" :disabled="disabled" @click="restoreDefaults">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M4 10a8 8 0 1 1 1 7"/><path d="M4 4v6h6" stroke-linecap="round" stroke-linejoin="round"/></svg>
@@ -27,8 +27,8 @@
         <button
           type="button"
           class="drag-handle"
-          :draggable="!disabled && !isLocked(entry)"
-          :disabled="disabled || isLocked(entry)"
+          :draggable="!disabled"
+          :disabled="disabled"
           :aria-label="`拖动第${index + 1}个阶段调整顺序`"
           title="拖动调整顺序"
           @dragstart="startDrag(entry.key, $event)"
@@ -61,7 +61,7 @@
           <button type="button" :disabled="!canMove(index, index + 1)" :aria-label="`下移第${index + 1}个阶段`" title="下移" @click="moveStage(index, index + 1)">
             <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 5v10m-4-4 4 4 4-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button type="button" class="delete-stage" :disabled="!canDelete(index)" :aria-label="`删除第${index + 1}个阶段`" :title="isLocked(entry) ? '历史阶段保留进度，不能删除' : '删除阶段'" @click="removeStage(index)">
+          <button type="button" class="delete-stage" :disabled="!canDelete(index)" :aria-label="`删除第${index + 1}个阶段`" title="删除阶段" @click="removeStage(index)">
             <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 5h14M8 3h4l1 2M5 5l1 12h8l1-12M8 8v6m4-6v6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
@@ -72,7 +72,7 @@
       <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M10 4v12M4 10h12" stroke-linecap="round"/></svg>
       添加阶段
     </button>
-    <p class="editor-help">{{ editing ? '保存后保留历史进度，并按新顺序接续未完成阶段。' : '阶段类型用于统计；创建时，首个投递阶段自动通过。' }}</p>
+    <p class="editor-help">{{ editing ? '已完成的状态随保留阶段保存；未完成阶段按新顺序接续。保存时至少保留一个阶段。' : '阶段类型用于统计；创建时，首个投递阶段自动通过。' }}</p>
     <p v-if="validationError" class="editor-error" role="alert">{{ validationError }}</p>
     <p class="sr-only" aria-live="polite">{{ announcement }}</p>
   </section>
@@ -109,17 +109,12 @@ watch(entries, value => {
   emit('change', value.map(({ id, name, type, status }) => ({ id, name, type, status })));
 }, { deep: true, flush: 'sync' });
 
-function isLocked(stage: StageDraft) {
-  return !!props.editing && isHistoryStage(stage);
-}
-
 function canMove(from: number, to: number) {
-  if (props.disabled || from === to || to < 0 || to >= entries.value.length) return false;
-  return !entries.value.slice(Math.min(from, to), Math.max(from, to) + 1).some(isLocked);
+  return !props.disabled && from !== to && from >= 0 && from < entries.value.length && to >= 0 && to < entries.value.length;
 }
 
 function canDelete(index: number) {
-  return !props.disabled && entries.value.length > 1 && !entries.value.slice(index).some(isLocked);
+  return !props.disabled && index >= 0 && index < entries.value.length;
 }
 
 function moveStage(from: number, to: number) {
@@ -151,7 +146,7 @@ function restoreDefaults() {
   if (!props.editing) {
     entries.value = makeEntries(createDefaultStageDefinitions());
   } else {
-    const history = entries.value.filter(isLocked);
+    const history = entries.value.filter(isHistoryStage);
     const defaults = createDefaultStageDefinitions();
     const completedSlots = new Set<number>();
     for (const entry of history) {
@@ -163,7 +158,7 @@ function restoreDefaults() {
     }
     const unfinishedDefaults = defaults.filter((_, index) => !completedSlots.has(index));
     const remaining = unfinishedDefaults.slice(0, MAX_STAGE_COUNT - history.length).map(stage => {
-      const existing = entries.value.find(entry => !isLocked(entry) && entry.name === stage.name);
+      const existing = entries.value.find(entry => !isHistoryStage(entry) && entry.name === stage.name);
       return { ...stage, id: existing?.id || uuidv4(), status: existing?.status || 'pending' as const, key: existing?.key ?? nextKey++ };
     });
     entries.value = [...history, ...remaining];
@@ -173,7 +168,7 @@ function restoreDefaults() {
 
 function startDrag(key: number, event: DragEvent) {
   const entry = entries.value.find(stage => stage.key === key);
-  if (props.disabled || !entry || isLocked(entry) || !event.dataTransfer) return;
+  if (props.disabled || !entry || !event.dataTransfer) return;
   draggedKey.value = key;
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', String(key));

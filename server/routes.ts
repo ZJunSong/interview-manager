@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { getDatabase } from './database';
 import { authMiddleware, adminMiddleware, AuthRequest } from './middleware';
-import { createDefaultStageDefinitions, createStages, getStageId, getStageType, mergeStageDefinitions, validateStageDefinitions, type Stage, type StageDefinition } from '../src/stages';
+import { createDefaultStageDefinitions, createStages, getStageId, getStageType, isStageActionable, mergeStageDefinitions, validateStageDefinitions, type Stage, type StageDefinition } from '../src/stages';
 
 const router = Router();
 router.use(authMiddleware);
@@ -238,11 +238,7 @@ router.patch('/:id', (req: AuthRequest, res) => {
       if (rawStages.some((stage: StageDefinition) => !stage.id)) {
         return res.status(400).json({ error: '编辑流程时必须保留阶段标识' });
       }
-      const merged = mergeStageDefinitions(stages, rawStages);
-      if (!merged) {
-        return res.status(400).json({ error: '历史阶段不能删除或调整顺序，请重新打开编辑页面' });
-      }
-      stages = merged;
+      stages = mergeStageDefinitions(stages, rawStages);
     }
 
     const now = new Date().toISOString();
@@ -277,7 +273,7 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
       return res.status(400).json({ error: '阶段索引无效' });
     }
     
-    if (!['pass', 'fail', 'rejected', 'skip'].includes(status)) {
+    if (!['current', 'pass', 'fail', 'rejected', 'skip'].includes(status)) {
       return res.status(400).json({ error: '状态值无效' });
     }
     
@@ -294,14 +290,20 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
       return res.status(400).json({ error: '阶段索引无效' });
     }
     
-    if (stages[stageIndex].status !== 'current') {
-      return res.status(400).json({ error: '只能操作当前阶段' });
+    if (!isStageActionable(stages[stageIndex])) {
+      return res.status(400).json({ error: '只能操作进行中、未通过或已拒绝的阶段' });
+    }
+
+    // 恢复进行中只用于撤销失败或拒绝的误操作。
+    if (status === 'current' && stages[stageIndex].status === 'current') {
+      return res.status(400).json({ error: '只有未通过或已拒绝的阶段可以恢复进行中' });
     }
     
     stages[stageIndex].status = status;
     
-    if (status === 'pass' || status === 'skip') {
-      const nextPending = stages.findIndex((stage, index) => index > stageIndex && stage.status === 'pending');
+    if ((status === 'pass' || status === 'skip') && !stages.some(stage => ['current', 'fail', 'rejected'].includes(stage.status))) {
+      // 阶段可以自由重排，结果更正后也要接续排在前面的待进行阶段。
+      const nextPending = stages.findIndex(stage => stage.status === 'pending');
       if (nextPending !== -1) {
         stages[nextPending].status = 'current';
       }

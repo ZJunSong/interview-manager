@@ -116,8 +116,8 @@
                 v-for="(stage, i) in item.stages"
                 :key="stage.id || i"
                 class="timeline-node"
-                :class="[`status-${stage.status}`, { clickable: stage.status === 'current' }]"
-                @click="stage.status === 'current' && openStageMenu(item.id, i, $event)"
+                :class="[`status-${stage.status}`, { clickable: isStageActionable(stage) }]"
+                @click="openStageMenu(item.id, i, $event)"
               >
                 <div class="node-dot"></div>
                 <div class="node-label" :title="stage.name">{{ stage.name }}</div>
@@ -138,7 +138,7 @@
         <div class="record-modal-header">
           <div>
             <h3 id="record-dialog-title">{{ recordDialogMode === 'edit' ? '编辑面试记录' : '添加面试记录' }}</h3>
-            <p>{{ recordDialogMode === 'edit' ? '调整岗位信息与流程，保留已发生的面试进度。' : '记录一个新机会，为这个岗位配置合适的面试流程。' }}</p>
+            <p>{{ recordDialogMode === 'edit' ? '自由调整岗位信息与所有阶段，已完成的状态随保留阶段保存。' : '记录一个新机会，为这个岗位配置合适的面试流程。' }}</p>
           </div>
           <button type="button" class="record-close" :disabled="savingRecord" aria-label="关闭面试编辑窗口" @click="closeRecordDialog">
             <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" stroke-linecap="round"/></svg>
@@ -185,6 +185,7 @@
     </div>
 
     <div v-if="stageMenu.visible" class="stage-menu" :style="{ top: stageMenu.y + 'px', left: stageMenu.x + 'px' }">
+      <button v-if="stageMenu.canResume" @click="updateStageStatus('current')">恢复进行中</button>
       <button @click="updateStageStatus('pass')">通过</button>
       <button @click="updateStageStatus('fail')">未通过</button>
       <button @click="updateStageStatus('rejected')">已拒绝</button>
@@ -204,7 +205,7 @@ import { filterInterviews, groupByCompany, sortGroups, isInterviewTerminated, is
 import StatsPanel from '../components/StatsPanel.vue';
 import EmptyState from '../components/EmptyState.vue';
 import StageEditor from '../components/StageEditor.vue';
-import { createDefaultStageDefinitions, getStageId, getStageType, validateStageDefinitions } from '../stages';
+import { createDefaultStageDefinitions, getStageId, getStageType, isStageActionable, validateStageDefinitions } from '../stages';
 
 const router = useRouter();
 const user = ref<any>(null);
@@ -225,7 +226,7 @@ const recordForm = ref<{ company: string; position: string; url: string; stages:
 const savingRecord = ref(false);
 const recordStageError = computed(() => validateStageDefinitions(recordForm.value.stages));
 
-const stageMenu = ref({ visible: false, x: 0, y: 0, interviewId: '', stageIndex: 0 });
+const stageMenu = ref({ visible: false, x: 0, y: 0, interviewId: '', stageIndex: 0, canResume: false });
 
 const toast = ref({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
@@ -400,10 +401,14 @@ async function handleDelete() {
 }
 
 function openStageMenu(interviewId: string, stageIndex: number, event: MouseEvent) {
+  const stage = interviews.value.find(item => item.id === interviewId)?.stages[stageIndex];
+  if (!stage || !isStageActionable(stage)) return;
+
   // 阻止冒泡：否则同一点击会立即传到 document 上的关闭监听，菜单开了又关，表现为点击无效
   event.stopPropagation();
-  // 菜单约 170×110px：靠近视口底部时向上弹出，靠近右缘时向左弹出，避免被裁剪
-  const MENU_H = 170;
+  const canResume = stage.status !== 'current';
+  // 失败或拒绝的节点多一项恢复操作，定位时计入增加的菜单高度。
+  const MENU_H = canResume ? 210 : 170;
   const MENU_W = 110;
   const flipUp = event.clientY + MENU_H > window.innerHeight;
   const flipLeft = event.clientX + MENU_W > window.innerWidth;
@@ -412,7 +417,8 @@ function openStageMenu(interviewId: string, stageIndex: number, event: MouseEven
     x: flipLeft ? event.clientX - MENU_W : event.clientX,
     y: flipUp ? event.clientY - MENU_H : event.clientY,
     interviewId,
-    stageIndex
+    stageIndex,
+    canResume
   };
 }
 

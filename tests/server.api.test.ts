@@ -191,7 +191,7 @@ describe('面试记录 CRUD', () => {
     expect(body.lastVisitedAt).toBeUndefined();
   });
 
-  it('非 current 阶段不允许操作，返回 400', async () => {
+  it('已通过的历史阶段不允许操作，返回校验错误', async () => {
     const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
     const res = await fetch(`${baseURL}/api/interviews/${list[0].id}/stage`, {
       method: 'PATCH',
@@ -516,6 +516,12 @@ describe('自定义面试流程', () => {
     });
   }
 
+  async function setStage(id: string, stageIndex: number, status: string) {
+    return fetch(`${baseURL}/api/interviews/${id}/stage`, {
+      method: 'PATCH', headers: auth(token), body: JSON.stringify({ stageIndex, status })
+    });
+  }
+
   it('同公司不同岗位保存各自流程，后续新增仍使用默认十阶段', async () => {
     const definitions = [
       { name: ' 提交申请 ', type: 'application', status: 'pending' },
@@ -574,6 +580,64 @@ describe('自定义面试流程', () => {
       });
       expect(response.status).toBe(200);
       expect(((await response.json()) as any).stages.map((stage: any) => stage.status)).toEqual([status, 'pending']);
+    }
+  });
+
+  it('未通过或已拒绝可以更正为通过或跳过，并接续下一阶段', async () => {
+    for (const stoppedStatus of ['fail', 'rejected']) {
+      for (const correctedStatus of ['pass', 'skip']) {
+        const item = (await (await createCustom([
+          { name: '提交申请', type: 'application' },
+          { name: '技术面谈', type: 'interview' },
+          { name: '录用通知', type: 'offer' }
+        ])).json()) as any;
+        expect((await setStage(item.id, 1, stoppedStatus)).status).toBe(200);
+        const response = await setStage(item.id, 1, correctedStatus);
+        expect(response.status).toBe(200);
+        const corrected = (await response.json()) as any;
+        expect(corrected.stages.map((stage: any) => stage.status)).toEqual(['pass', correctedStatus, 'current']);
+        expect(corrected.stages.map((stage: any) => stage.id)).toEqual(item.stages.map((stage: any) => stage.id));
+        expect(corrected.createdAt).toBe(item.createdAt);
+        const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
+        expect(list.find(record => record.id === item.id).stages).toEqual(corrected.stages);
+      }
+    }
+  });
+
+  it('未通过和已拒绝可以反复更改或恢复进行中，再继续正常流转', async () => {
+    for (const stoppedStatus of ['fail', 'rejected']) {
+      const item = (await (await createCustom([
+        { name: '技术面谈', type: 'interview' }, { name: '人事面谈', type: 'interview' }
+      ])).json()) as any;
+      for (const status of [stoppedStatus, 'fail', 'rejected', stoppedStatus]) {
+        const stopped = await setStage(item.id, 0, status);
+        expect(stopped.status).toBe(200);
+        expect(((await stopped.json()) as any).stages.map((stage: any) => stage.status)).toEqual([status, 'pending']);
+      }
+      // 后续阶段仍须按流程接续，不能在恢复前直接操作。
+      expect((await setStage(item.id, 1, 'pass')).status).toBe(400);
+      expect((await setStage(item.id, 0, 'pending')).status).toBe(400);
+      const resumed = await setStage(item.id, 0, 'current');
+      expect(resumed.status).toBe(200);
+      expect(((await resumed.json()) as any).stages.map((stage: any) => stage.status)).toEqual(['current', 'pending']);
+      const passed = await setStage(item.id, 0, 'pass');
+      expect(passed.status).toBe(200);
+      expect(((await passed.json()) as any).stages.map((stage: any) => stage.status)).toEqual(['pass', 'current']);
+    }
+  });
+
+  it('最后一个阶段更正后可以恢复进行中或完成，不生成额外阶段', async () => {
+    for (const stoppedStatus of ['fail', 'rejected']) {
+      for (const correctedStatus of ['current', 'pass', 'skip']) {
+        const item = (await (await createCustom([{ name: '最终面谈', type: 'interview' }])).json()) as any;
+        expect((await setStage(item.id, 0, stoppedStatus)).status).toBe(200);
+        const response = await setStage(item.id, 0, correctedStatus);
+        expect(response.status).toBe(200);
+        expect(((await response.json()) as any).stages.map((stage: any) => stage.status)).toEqual([correctedStatus]);
+        if (correctedStatus !== 'current') {
+          expect((await setStage(item.id, 0, 'fail')).status).toBe(400);
+        }
+      }
     }
   });
 
@@ -697,16 +761,23 @@ describe('已创建面试记录的流程编辑', () => {
     expect(list.find(record => record.id === sibling.id).stages).toEqual(sibling.stages);
   });
 
-  it('历史阶段不能删除、移动或被替换成新标识，校验失败不会写入', async () => {
-    const item = await newRecord();
-    const invalid = [
-      item.stages.slice(1),
-      [item.stages[1], item.stages[0], ...item.stages.slice(2)],
-      [{ ...item.stages[0], id: 'replacement' }, ...item.stages.slice(1)]
+  it('历史阶段可删除、移动或替换，保留阶段的状态不会错位', async () => {
+    const cases = [
+      { edit: (item: any) => item.stages.slice(1), statuses: ['current', 'pending', 'pending'] },
+      { edit: (item: any) => [item.stages[1], item.stages[0], ...item.stages.slice(2)], statuses: ['current', 'pass', 'pending', 'pending'] },
+      { edit: (item: any) => [{ ...item.stages[0], id: 'replacement' }, ...item.stages.slice(1)], statuses: ['current', 'pending', 'pending', 'pending'] }
     ];
-    for (const stages of invalid) expect((await save(item, stages)).status).toBe(400);
-    const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
-    expect(list.find(record => record.id === item.id).stages).toEqual(item.stages);
+    for (const testCase of cases) {
+      const item = await newRecord();
+      const edited = testCase.edit(item);
+      const response = await save(item, edited);
+      expect(response.status).toBe(200);
+      const updated = (await response.json()) as any;
+      expect(updated.stages.map((stage: any) => stage.id)).toEqual(edited.map((stage: any) => stage.id));
+      expect(updated.stages.map((stage: any) => stage.status)).toEqual(testCase.statuses);
+      const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
+      expect(list.find(record => record.id === item.id).stages).toEqual(updated.stages);
+    }
   });
 
   it('删除当前阶段后接续下一阶段，后续流转使用新顺序', async () => {
@@ -722,7 +793,7 @@ describe('已创建面试记录的流程编辑', () => {
     expect(((await skipped.json()) as any).stages[2].status).toBe('current');
   });
 
-  it('已跳过阶段保留历史状态，允许改名但不能删除', async () => {
+  it('已跳过阶段保留历史状态，也可删除', async () => {
     const item = await newRecord();
     const skipped = (await (await fetch(`${baseURL}/api/interviews/${item.id}/stage`, {
       method: 'PATCH', headers: auth(token), body: JSON.stringify({ stageIndex: 1, status: 'skip' })
@@ -734,10 +805,55 @@ describe('已创建面试记录的流程编辑', () => {
     const updated = (await response.json()) as any;
     expect(updated.stages.map((stage: any) => stage.status)).toEqual(['pass', 'skip', 'current', 'pending']);
     expect(updated.stages[1].name).toBe('免除的技术交流');
-    expect((await save(item, [updated.stages[0], ...updated.stages.slice(2)])).status).toBe(400);
+    const removed = await save(item, [updated.stages[0], ...updated.stages.slice(2)]);
+    expect(removed.status).toBe(200);
+    expect(((await removed.json()) as any).stages.map((stage: any) => stage.status)).toEqual(['pass', 'current', 'pending']);
   });
 
-  it('失败和拒绝记录编辑后仍保持终结，不恢复当前阶段', async () => {
+  it('已通过阶段可移到未完成阶段之后，接续时跳过已有结果', async () => {
+    const item = await newRecord();
+    const response = await save(item, [item.stages[1], item.stages[2], item.stages[0], item.stages[3]]);
+    expect(response.status).toBe(200);
+    expect(((await response.json()) as any).stages.map((stage: any) => stage.status)).toEqual(['current', 'pending', 'pass', 'pending']);
+    for (const stageIndex of [0, 1]) {
+      const progressed = await fetch(`${baseURL}/api/interviews/${item.id}/stage`, {
+        method: 'PATCH', headers: auth(token), body: JSON.stringify({ stageIndex, status: 'pass' })
+      });
+      expect(progressed.status).toBe(200);
+      const updated = (await progressed.json()) as any;
+      expect(updated.stages[2].status).toBe('pass');
+      expect(updated.stages[stageIndex === 0 ? 1 : 3].status).toBe('current');
+    }
+  });
+
+  it('删除未通过或已拒绝阶段可恢复流程，保留它们时仍为终结状态', async () => {
+    for (const status of ['fail', 'rejected']) {
+      const item = await newRecord();
+      const stopped = (await (await fetch(`${baseURL}/api/interviews/${item.id}/stage`, {
+        method: 'PATCH', headers: auth(token), body: JSON.stringify({ stageIndex: 1, status })
+      })).json()) as any;
+      const response = await save(item, [stopped.stages[0], ...stopped.stages.slice(2)]);
+      expect(response.status).toBe(200);
+      const updated = (await response.json()) as any;
+      expect(updated.stages.map((stage: any) => stage.status)).toEqual(['pass', 'current', 'pending']);
+    }
+  });
+
+  it('失败结果移到末尾后更正，应接续排在前面的待进行阶段', async () => {
+    const item = await newRecord();
+    const stopped = (await (await fetch(`${baseURL}/api/interviews/${item.id}/stage`, {
+      method: 'PATCH', headers: auth(token), body: JSON.stringify({ stageIndex: 1, status: 'fail' })
+    })).json()) as any;
+    const reordered = await save(item, [stopped.stages[2], stopped.stages[0], stopped.stages[3], stopped.stages[1]]);
+    expect(reordered.status).toBe(200);
+    const corrected = await fetch(`${baseURL}/api/interviews/${item.id}/stage`, {
+      method: 'PATCH', headers: auth(token), body: JSON.stringify({ stageIndex: 3, status: 'pass' })
+    });
+    expect(corrected.status).toBe(200);
+    expect(((await corrected.json()) as any).stages.map((stage: any) => stage.status)).toEqual(['current', 'pass', 'pending', 'pass']);
+  });
+
+  it('失败和拒绝记录编辑后保留结果，手动更正时按新流程接续', async () => {
     for (const status of ['fail', 'rejected']) {
       const item = await newRecord();
       const stopped = (await (await fetch(`${baseURL}/api/interviews/${item.id}/stage`, {
@@ -751,6 +867,13 @@ describe('已创建面试记录的流程编辑', () => {
       const updated = (await response.json()) as any;
       expect(updated.stages[1].status).toBe(status);
       expect(updated.stages.some((stage: any) => stage.status === 'current')).toBe(false);
+      const corrected = await fetch(`${baseURL}/api/interviews/${item.id}/stage`, {
+        method: 'PATCH', headers: auth(token), body: JSON.stringify({ stageIndex: 1, status: 'pass' })
+      });
+      expect(corrected.status).toBe(200);
+      const continued = (await corrected.json()) as any;
+      expect(continued.stages.map((stage: any) => stage.status)).toEqual(['pass', 'pass', 'current', 'pending', 'pending']);
+      expect(continued.stages[2].id).toBe(`new-${status}`);
     }
   });
 

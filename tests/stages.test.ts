@@ -72,12 +72,25 @@ describe('已创建流程的编辑与进度保留', () => {
     expect(original[1].status).toBe('current');
   });
 
-  it('删除或移动历史阶段会被拒绝', () => {
-    expect(mergeStageDefinitions(original, [{ id: 'interview', name: '面试', type: 'interview' }])).toBeNull();
-    expect(mergeStageDefinitions(original, [
+  it('历史阶段可删除或移动，保留阶段仍按标识保存状态', () => {
+    const removed = mergeStageDefinitions(original, [{ id: 'interview', name: '面试', type: 'interview' }]);
+    expect(removed.map(stage => stage.status)).toEqual(['current']);
+    const moved = mergeStageDefinitions(original, [
       { id: 'interview', name: '面试', type: 'interview' },
       { id: 'application', name: '投递', type: 'application' }
-    ])).toBeNull();
+    ]);
+    expect(moved.map(stage => stage.status)).toEqual(['current', 'pass']);
+    expect(moved[1].id).toBe('application');
+  });
+
+  it('删除未通过或已拒绝阶段后，剩余流程重新接续', () => {
+    for (const status of ['fail', 'rejected'] as const) {
+      const stages = mergeStageDefinitions([
+        { id: 'failed', name: '历史面试', type: 'interview', status },
+        { id: 'next', name: '下一轮', type: 'interview', status: 'pending' }
+      ], [{ id: 'next', name: '下一轮', type: 'interview' }]);
+      expect(stages[0].status).toBe('current');
+    }
   });
 
   it('旧阶段标识兼容后首次保存保留历史进度', () => {
