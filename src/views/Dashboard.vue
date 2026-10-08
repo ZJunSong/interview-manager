@@ -952,7 +952,7 @@ onUnmounted(() => {
   transition: opacity var(--duration-fast) var(--ease-out);
 }
 
-.position-row:hover .row-actions {
+.card:hover .row-actions {
   opacity: 1;
 }
 
