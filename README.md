@@ -15,9 +15,9 @@
 
 <div align="center">
 
-**[▶ 观看操作演示视频](https://github.com/jovanzhang6/interview-manager/releases/latest)**
+<img src="assets/demo.gif" alt="操作演示" width="100%" />
 
-<img src="assets/screenshot-dashboard.png" alt="控制台界面" width="100%" />
+*[高清版演示视频（MP4）](https://github.com/jovanzhang6/interview-manager/releases/latest) · [界面截图](assets/screenshot-dashboard.png)*
 
 </div>
 
