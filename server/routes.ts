@@ -255,11 +255,12 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
     const { id } = req.params;
     const { stageIndex, status } = req.body;
     
-    if (typeof stageIndex !== 'number' || stageIndex < 0 || stageIndex > 9) {
+    if (!Number.isInteger(stageIndex) || stageIndex < 0 || stageIndex > 9) {
       return res.status(400).json({ error: '阶段索引无效' });
     }
     
-    if (!VALID_STATUS_SET.has(status)) {
+    // 更新只接受操作结果；导入仍使用包含待进行状态的完整集合。
+    if (!['current', 'pass', 'fail', 'rejected', 'skip'].includes(status)) {
       return res.status(400).json({ error: '状态值无效' });
     }
     
@@ -272,14 +273,31 @@ router.patch('/:id/stage', (req: AuthRequest, res) => {
     
     const stages = JSON.parse(row.stages);
     
-    if (stages[stageIndex].status !== 'current') {
-      return res.status(400).json({ error: '只能操作当前阶段' });
+    const stage = stages[stageIndex];
+    if (!stage || !['current', 'pass', 'fail', 'rejected', 'skip'].includes(stage.status)) {
+      return res.status(400).json({ error: '待进行阶段不能直接修改' });
     }
+
+    if (stage.status === status) {
+      return res.status(400).json({ error: '阶段已经处于该状态' });
+    }
+
+    if (stage.status !== 'current') {
+      if (stages.slice(0, stageIndex).some((s: any) => ['current', 'fail', 'rejected'].includes(s.status))) {
+        return res.status(400).json({ error: '请先处理前面的进行中、未通过或已拒绝阶段' });
+      }
+
+      // 历史结果更正意味着从该节点重新接续，后续已记录的结果一并撤销。
+      for (let i = stageIndex + 1; i < stages.length; i++) {
+        stages[i].status = 'pending';
+      }
+    }
+
+    stage.status = status;
     
-    stages[stageIndex].status = status;
-    
-    if (status === 'pass' || status === 'skip') {
-      const nextPending = stages.findIndex((s: any) => s.status === 'pending');
+    if ((status === 'pass' || status === 'skip') &&
+        !stages.some((s: any) => ['current', 'fail', 'rejected'].includes(s.status))) {
+      const nextPending = stages.findIndex((s: any, index: number) => index > stageIndex && s.status === 'pending');
       if (nextPending !== -1) {
         stages[nextPending].status = 'current';
       }

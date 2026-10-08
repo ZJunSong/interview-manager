@@ -124,8 +124,9 @@
                 v-for="(stage, i) in item.stages"
                 :key="i"
                 class="timeline-node"
-                :class="[`status-${stage.status}`, { clickable: stage.status === 'current' }]"
-                @click="stage.status === 'current' && openStageMenu(item.id, i, $event)"
+                :class="[`status-${stage.status}`, { clickable: stage.status !== 'pending' }]"
+                @click="openStageMenu(item.id, i, $event)"
+                @contextmenu="openStageMenu(item.id, i, $event)"
               >
                 <div class="node-dot"></div>
                 <div class="node-label">{{ stage.name }}</div>
@@ -200,11 +201,23 @@
       </div>
     </div>
 
+    <div v-if="stageCorrection" class="modal-overlay" @click.self="stageCorrection = null">
+      <div class="modal modal-small" role="alertdialog" aria-modal="true" aria-labelledby="stage-correction-title">
+        <h3 id="stage-correction-title">确认更正阶段</h3>
+        <p>确定要更正 {{ stageCorrection.company }} 的 {{ stageCorrection.position }} 中「{{ stageCorrection.stageName }}」阶段吗？后续所有阶段将重置为待进行，已记录的结果也会清除。</p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" @click="stageCorrection = null">取消</button>
+          <button type="button" class="btn btn-danger" @click="confirmStageCorrection">确认更正</button>
+        </div>
+      </div>
+    </div>
+
     <div v-if="stageMenu.visible" class="stage-menu" :style="{ top: stageMenu.y + 'px', left: stageMenu.x + 'px' }">
-      <button @click="updateStageStatus('pass')">通过</button>
-      <button @click="updateStageStatus('fail')">未通过</button>
-      <button @click="updateStageStatus('rejected')">已拒绝</button>
-      <button @click="updateStageStatus('skip')">跳过</button>
+      <button v-if="stageMenu.status !== 'current'" @click="updateStageStatus('current')">恢复进行中</button>
+      <button :disabled="stageMenu.status === 'pass'" @click="updateStageStatus('pass')">通过</button>
+      <button :disabled="stageMenu.status === 'fail'" @click="updateStageStatus('fail')">未通过</button>
+      <button :disabled="stageMenu.status === 'rejected'" @click="updateStageStatus('rejected')">已拒绝</button>
+      <button :disabled="stageMenu.status === 'skip'" @click="updateStageStatus('skip')">跳过</button>
     </div>
 
     <div v-if="toast.show" class="toast" :class="toast.type">{{ toast.message }}</div>
@@ -214,7 +227,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
-import type { Interview } from '../types';
+import type { Interview, StageStatus } from '../types';
 import { fetchInterviews, createInterview, updateStage, deleteInterview, updateInterview, exportInterviews, importInterviews, visitCompany, pinCompany } from '../api';
 import { filterInterviews, groupByCompany, sortGroups, isInterviewTerminated, isGroupTerminated, type CompanyGroup, type SortMode } from '../utils/grouping';
 import StatsPanel from '../components/StatsPanel.vue';
@@ -238,7 +251,11 @@ const editTarget = ref<Interview | null>(null);
 const addForm = ref({ company: '', position: '', url: '' });
 const editForm = ref({ company: '', position: '', url: '' });
 
-const stageMenu = ref({ visible: false, x: 0, y: 0, interviewId: '', stageIndex: 0 });
+const stageMenu = ref({ visible: false, x: 0, y: 0, interviewId: '', stageIndex: 0, status: 'current' as StageStatus });
+const stageCorrection = ref<{
+  interviewId: string; stageIndex: number; status: StageStatus;
+  company: string; position: string; stageName: string;
+} | null>(null);
 
 const toast = ref({ show: false, message: '', type: 'success' as 'success' | 'error' });
 
@@ -395,26 +412,58 @@ async function handleDelete() {
 }
 
 function openStageMenu(interviewId: string, stageIndex: number, event: MouseEvent) {
+  const stage = interviews.value.find(item => item.id === interviewId)?.stages[stageIndex];
+  if (!stage || stage.status === 'pending') return;
+
+  // 左右键共用菜单，待进行节点继续保留浏览器原有的右键行为。
+  event.preventDefault();
   // 阻止冒泡：否则同一点击会立即传到 document 上的关闭监听，菜单开了又关，表现为点击无效
   event.stopPropagation();
-  // 菜单约 170×110px：靠近视口底部时向上弹出，靠近右缘时向左弹出，避免被裁剪
-  const MENU_H = 170;
+  // 历史节点多一项恢复操作，定位时预留相应高度和视口边距。
+  const MENU_H = stage.status === 'current' ? 170 : 210;
   const MENU_W = 110;
   const flipUp = event.clientY + MENU_H > window.innerHeight;
   const flipLeft = event.clientX + MENU_W > window.innerWidth;
   stageMenu.value = {
     visible: true,
-    x: flipLeft ? event.clientX - MENU_W : event.clientX,
-    y: flipUp ? event.clientY - MENU_H : event.clientY,
+    x: Math.max(8, Math.min(flipLeft ? event.clientX - MENU_W : event.clientX, window.innerWidth - MENU_W - 8)),
+    y: Math.max(8, Math.min(flipUp ? event.clientY - MENU_H : event.clientY, window.innerHeight - MENU_H - 8)),
     interviewId,
-    stageIndex
+    stageIndex,
+    status: stage.status
   };
 }
 
-async function updateStageStatus(status: string) {
+async function updateStageStatus(status: StageStatus) {
   const { interviewId, stageIndex } = stageMenu.value;
   stageMenu.value.visible = false;
 
+  const interview = interviews.value.find(item => item.id === interviewId);
+  const stage = interview?.stages[stageIndex];
+  if (!interview || !stage || stage.status === 'pending' || stage.status === status) return;
+
+  const hasLaterResults = interview.stages.slice(stageIndex + 1)
+    .some(s => s.status !== 'pending' && s.status !== 'current');
+  if (stage.status !== 'current' && hasLaterResults) {
+    stageCorrection.value = {
+      interviewId, stageIndex, status,
+      company: interview.company, position: interview.position, stageName: stage.name
+    };
+    return;
+  }
+
+  await saveStageStatus(interviewId, stageIndex, status);
+}
+
+async function confirmStageCorrection() {
+  const correction = stageCorrection.value;
+  if (!correction) return;
+  // 先关闭确认层，再提交已经选定的记录，避免连续点击重复发送更正请求。
+  stageCorrection.value = null;
+  await saveStageStatus(correction.interviewId, correction.stageIndex, correction.status);
+}
+
+async function saveStageStatus(interviewId: string, stageIndex: number, status: StageStatus) {
   try {
     const updated = await updateStage(interviewId, stageIndex, status);
     const idx = interviews.value.findIndex(i => i.id === interviewId);
@@ -1265,7 +1314,12 @@ onUnmounted(() => {
   transition: background var(--duration-fast) var(--ease-out);
 }
 
-.stage-menu button:hover {
+.stage-menu button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.stage-menu button:not(:disabled):hover {
   background: var(--color-bg);
 }
 

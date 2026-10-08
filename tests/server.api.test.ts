@@ -191,12 +191,12 @@ describe('面试记录 CRUD', () => {
     expect(body.lastVisitedAt).toBeUndefined();
   });
 
-  it('非 current 阶段不允许操作，返回 400', async () => {
+  it('待进行阶段不能提前修改，返回 400', async () => {
     const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
     const res = await fetch(`${baseURL}/api/interviews/${list[0].id}/stage`, {
       method: 'PATCH',
       headers: auth(token),
-      body: JSON.stringify({ stageIndex: 0, status: 'pass' })
+      body: JSON.stringify({ stageIndex: 3, status: 'pass' })
     });
     expect(res.status).toBe(400);
   });
@@ -218,6 +218,13 @@ describe('面试记录 CRUD', () => {
       body: JSON.stringify({ stageIndex: 99, status: 'pass' })
     });
     expect(bad2.status).toBe(400);
+
+    const bad3 = await fetch(`${baseURL}/api/interviews/${id}/stage`, {
+      method: 'PATCH',
+      headers: auth(token),
+      body: JSON.stringify({ stageIndex: 1.5, status: 'pass' })
+    });
+    expect(bad3.status).toBe(400);
   });
 
   it('删除记录', async () => {
@@ -229,6 +236,169 @@ describe('面试记录 CRUD', () => {
     expect(res.status).toBe(200);
     const list = (await (await fetch(`${baseURL}/api/interviews`, { headers: auth(token) })).json()) as any[];
     expect(list.find((i: any) => i.id === item.id)).toBeUndefined();
+  });
+});
+
+// 历史更正统一撤销后续结果，使用独立用户避免影响原有记录数量断言。
+describe('已记录阶段更正', () => {
+  let token = '';
+  let sequence = 0;
+  const historyStates = [
+    { status: 'pass', label: '已通过' },
+    { status: 'skip', label: '已跳过' },
+    { status: 'fail', label: '未通过' },
+    { status: 'rejected', label: '已拒绝' }
+  ];
+  const actions = [{ status: 'current', label: '进行中' }, ...historyStates];
+
+  beforeAll(async () => {
+    token = await registerAndLogin('stage_correction');
+  });
+
+  async function importRecord(statuses: string[]) {
+    const item = {
+      id: `stage-correction-${++sequence}`,
+      company: '阶段更正测试',
+      position: '前端工程师',
+      stages: validStages().map((stage, index) => ({ ...stage, status: statuses[index] }))
+    };
+    const res = await fetch(`${baseURL}/api/interviews/import`, {
+      method: 'POST',
+      headers: auth(token),
+      body: JSON.stringify({ data: [item] })
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).count).toBe(1);
+    return item;
+  }
+
+  function changeStage(id: string, stageIndex: number, status: string, callerToken = token) {
+    return fetch(`${baseURL}/api/interviews/${id}/stage`, {
+      method: 'PATCH',
+      headers: auth(callerToken),
+      body: JSON.stringify({ stageIndex, status })
+    });
+  }
+
+  async function readRecord(id: string) {
+    const res = await fetch(`${baseURL}/api/interviews`, { headers: auth(token) });
+    expect(res.status).toBe(200);
+    const item = (await res.json()).find((record: any) => record.id === id);
+    expect(item).toBeDefined();
+    return item;
+  }
+
+  const corrections = historyStates.flatMap(source => actions
+    .filter(target => target.status !== source.status)
+    .map(target => ({ source: source.status, target: target.status, sourceLabel: source.label, targetLabel: target.label })));
+
+  it.each(corrections)('$sourceLabel更正为$targetLabel，保留前序并重置全部后续结果', async ({ source, target }) => {
+    // 后续混合全部已记录状态，验证已通过、已跳过和终止结果也被撤销。
+    const item = await importRecord(['pass', 'skip', source, 'pass', 'skip', 'current', 'fail', 'rejected', 'pass', 'pass']);
+    const res = await changeStage(item.id, 2, target);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+
+    const expected = ['pass', 'skip', target, ...Array(7).fill('pending')];
+    if (target === 'pass' || target === 'skip') expected[3] = 'current';
+    expect(body.stages.map((stage: any) => stage.status)).toEqual(expected);
+    expect(body.stages.slice(0, 2)).toEqual(item.stages.slice(0, 2));
+    expect(body.stages.map((stage: any) => stage.name)).toEqual(item.stages.map(stage => stage.name));
+    expect(body.stages.filter((stage: any) => stage.status === 'current')).toHaveLength(
+      target === 'fail' || target === 'rejected' ? 0 : 1
+    );
+    expect((await readRecord(item.id)).stages).toEqual(body.stages);
+  });
+
+  it('自动通过的投递阶段可以恢复并重新推进，其他岗位字段保持不变', async () => {
+    const company = '首阶段更正公司';
+    const item = await createInterview(token, company, '后端工程师', 'https://jobs.example.com/correction');
+    const pinRes = await fetch(`${baseURL}/api/interviews/pin-company`, {
+      method: 'PUT', headers: auth(token), body: JSON.stringify({ company, pinned: true })
+    });
+    expect(pinRes.status).toBe(200);
+    const visitRes = await fetch(`${baseURL}/api/interviews/visit-company`, {
+      method: 'POST', headers: auth(token), body: JSON.stringify({ company })
+    });
+    expect(visitRes.status).toBe(200);
+    const visit = await visitRes.json();
+
+    const res = await changeStage(item.id, 0, 'current');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.stages.map((stage: any) => stage.status)).toEqual(['current', ...Array(9).fill('pending')]);
+    const fields = {
+      id: item.id, company, position: item.position, status: item.status,
+      url: item.url, pinned: true, lastVisitedAt: visit.lastVisitedAt, createdAt: item.createdAt
+    };
+    expect(body).toMatchObject(fields);
+    expect(await readRecord(item.id)).toMatchObject({ ...fields, stages: body.stages });
+
+    const continued = await changeStage(item.id, 0, 'skip');
+    expect(continued.status).toBe(200);
+    expect((await continued.json()).stages.map((stage: any) => stage.status))
+      .toEqual(['skip', 'current', ...Array(8).fill('pending')]);
+  });
+
+  const finalCorrections = [
+    ...historyStates.map(source => ({ source: source.status, target: 'current', sourceLabel: source.label, targetLabel: '进行中' })),
+    { source: 'pass', target: 'skip', sourceLabel: '已通过', targetLabel: '已跳过' },
+    { source: 'skip', target: 'pass', sourceLabel: '已跳过', targetLabel: '已通过' }
+  ];
+  it.each(finalCorrections)('最后阶段由$sourceLabel更正为$targetLabel，不启动额外阶段', async ({ source, target }) => {
+    const item = await importRecord([...Array(9).fill('pass'), source]);
+    const res = await changeStage(item.id, 9, target);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.stages.slice(0, 9)).toEqual(item.stages.slice(0, 9));
+    expect(body.stages[9].status).toBe(target);
+    expect(body.stages.filter((stage: any) => stage.status === 'current')).toHaveLength(target === 'current' ? 1 : 0);
+  });
+
+  it.each(actions)('$label重复设置相同状态被拒绝，后续结果及更新时间均不改变', async ({ status }) => {
+    const later = status === 'current' ? Array(7).fill('pending') : ['pass', 'skip', 'current', ...Array(4).fill('pending')];
+    const item = await importRecord(['pass', 'skip', status, ...later]);
+    const before = await readRecord(item.id);
+    expect((await changeStage(item.id, 2, status)).status).toBe(400);
+    expect(await readRecord(item.id)).toEqual(before);
+  });
+
+  it('禁止回写待进行状态，导入仍可包含待进行节点', async () => {
+    const item = await importRecord(['pass', 'skip', 'pass', 'current', ...Array(6).fill('pending')]);
+    const before = await readRecord(item.id);
+    expect((await changeStage(item.id, 2, 'pending')).status).toBe(400);
+    expect(await readRecord(item.id)).toEqual(before);
+  });
+
+  it.each([
+    { status: 'current', label: '进行中' },
+    { status: 'fail', label: '未通过' },
+    { status: 'rejected', label: '已拒绝' }
+  ])('前序存在$label时拒绝历史更正，整条记录保持不变', async ({ status }) => {
+    const item = await importRecord(['pass', status, 'skip', 'pass', 'current', ...Array(5).fill('pending')]);
+    const before = await readRecord(item.id);
+    for (const target of ['current', 'pass', 'fail']) {
+      expect((await changeStage(item.id, 2, target)).status).toBe(400);
+      expect(await readRecord(item.id)).toEqual(before);
+    }
+  });
+
+  it('其他用户不能恢复历史节点，原用户数据保持不变', async () => {
+    const item = await importRecord(['pass', 'skip', 'pass', 'current', ...Array(6).fill('pending')]);
+    const before = await readRecord(item.id);
+    const otherToken = await registerAndLogin('stage_other');
+    expect((await changeStage(item.id, 2, 'current', otherToken)).status).toBe(404);
+    expect(await readRecord(item.id)).toEqual(before);
+  });
+
+  it.each(historyStates)('进行中节点改为$label时保留正常推进和终止规则', async ({ status }) => {
+    const item = await createInterview(token, '正常阶段流转', '测试工程师');
+    const res = await changeStage(item.id, 1, status);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    const expected = ['pass', status, ...Array(8).fill('pending')];
+    if (status === 'pass' || status === 'skip') expected[2] = 'current';
+    expect(body.stages.map((stage: any) => stage.status)).toEqual(expected);
   });
 });
 
