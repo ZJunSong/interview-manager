@@ -77,7 +77,7 @@
               <h2
                 class="card-company"
                 :class="{ 'has-url': group.url }"
-                :title="group.url ? '点击访问招聘页面，该公司全部岗位标记为已访问' : ''"
+                :title="group.url ? '点击打开投递记录页面，该公司全部岗位标记为已访问' : ''"
                 @click="group.url && handleVisitCompany(group)"
               >
                 {{ group.company }}
@@ -92,6 +92,13 @@
               >
                 <span class="visit-dot"></span>{{ group.latestVisit ? getVisitStatusLabel(group.latestVisit) : '未访问' }}
               </span>
+              <button
+                class="btn-icon add-pos-btn"
+                title="为该公司新增岗位，自动带上公司名和投递记录页链接"
+                @click="openAddForCompany(group)"
+              >
+                新增岗位
+              </button>
               <button
                 class="btn-icon pin-btn"
                 :class="{ 'pin-active': group.pinned }"
@@ -147,7 +154,7 @@
             <input v-model="addForm.position" type="text" required placeholder="例如：前端工程师" />
           </div>
           <div class="form-group">
-            <label>招聘页面链接 <span class="optional">（选填，同公司建议填同一个）</span></label>
+            <label>投递记录页面链接 <span class="optional">（选填，可在卡片一键跳转，同公司共用）</span></label>
             <input v-model="addForm.url" type="url" placeholder="例如：https://jobs.example.com/123" />
           </div>
           <div class="modal-actions">
@@ -171,7 +178,7 @@
             <input v-model="editForm.position" type="text" required />
           </div>
           <div class="form-group">
-            <label>招聘页面链接 <span class="optional">（选填）</span></label>
+            <label>投递记录页面链接 <span class="optional">（选填，可在卡片一键跳转，同公司共用）</span></label>
             <input v-model="editForm.url" type="url" placeholder="例如：https://jobs.example.com/123" />
           </div>
           <div class="modal-actions">
@@ -312,6 +319,12 @@ async function loadData() {
   } finally {
     loading.value = false;
   }
+}
+
+// 从公司卡片发起新增：预填公司名与投递记录页链接，避免手打公司名不一致导致无法聚合到同一公司
+function openAddForCompany(group: CompanyGroup) {
+  addForm.value = { company: group.company, position: '', url: group.url || '' };
+  showAddModal.value = true;
 }
 
 async function handleAdd() {
@@ -470,7 +483,7 @@ async function togglePin(group: CompanyGroup) {
   }
 }
 
-// 以公司为基准访问：打开该公司的招聘页面（优先取最近访问过的岗位的链接），
+// 以公司为基准访问：打开该公司的投递记录页面（优先取最近访问过的岗位的链接），
 // 公司下所有岗位记录一次性标记为已访问
 async function handleVisitCompany(group: CompanyGroup) {
   if (!group.url) return;
@@ -976,6 +989,20 @@ onUnmounted(() => {
 
 @media (hover: none) {
   .pin-btn {
+    opacity: 1;
+  }
+}
+
+.add-pos-btn {
+  opacity: 0;
+}
+
+.card:hover .add-pos-btn {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .add-pos-btn {
     opacity: 1;
   }
 }
