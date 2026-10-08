@@ -5,6 +5,8 @@
 /* 字体通过 index.html 的 <link> 预连接加载，避免 CSS @import 阻塞渲染 */
 
 :root {
+  color-scheme: light;
+
   /* Typography */
   --font-display: 'Noto Serif SC', 'Songti SC', 'SimSun', serif;
   --font-body: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
@@ -25,10 +27,13 @@
   --color-accent: #2563eb;
   --color-accent-strong: #1d4ed8;
   --color-accent-soft: rgba(37, 99, 235, 0.08);
+  --color-accent-border: rgba(37, 99, 235, 0.30);
   --color-success: #15803d;
   --color-success-soft: rgba(21, 128, 61, 0.09);
   --color-danger: #dc2626;
   --color-danger-soft: rgba(220, 38, 38, 0.08);
+  --color-danger-hover: #b91c1c;
+  --color-danger-border: rgba(220, 38, 38, 0.35);
   --color-warning: #b45309;
   --color-warning-soft: rgba(180, 83, 9, 0.10);
   --color-orange: #c2410c;
@@ -39,6 +44,10 @@
   /* 主按钮用墨色，与数据强调色分离 */
   --color-ink: #1c1917;
   --color-ink-hover: #34302b;
+  --color-on-ink: #ffffff;
+  --color-on-status: #ffffff;
+  --color-shimmer: #f6f5f2;
+  --color-pinned-highlight: rgba(37, 99, 235, 0.045);
 
   /* 时间线专用 */
   --color-pending-border: #d6d3ce;
@@ -68,6 +77,7 @@
   --shadow-card-hover: 0 2px 4px rgba(28, 25, 23, 0.05), 0 12px 32px rgba(28, 25, 23, 0.08), 0 0 0 1px rgba(28, 25, 23, 0.06);
   --shadow-modal: 0 24px 80px rgba(28, 25, 23, 0.14), 0 0 0 1px rgba(28, 25, 23, 0.05);
   --shadow-popover: 0 8px 30px rgba(28, 25, 23, 0.10), 0 0 0 1px rgba(28, 25, 23, 0.04);
+  --shadow-button: 0 6px 16px rgba(28, 25, 23, 0.18);
 
   /* 背景模糊 */
   --backdrop-blur: blur(32px) saturate(160%);
@@ -79,6 +89,56 @@
   --duration-fast: 0.15s;
   --duration-normal: 0.25s;
   --duration-slow: 0.4s;
+}
+
+/* 夜间主题复用原有设计变量，让页面、表单、弹窗和时间线同步切换。 */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --color-text: #f3f2ef;
+  --color-text-secondary: #cbc7c2;
+  --color-text-tertiary: #a39e97;
+  --color-bg: #16181d;
+  --color-bg-deep: #2d313a;
+  --color-surface: rgba(34, 37, 44, 0.88);
+  --color-surface-solid: #22252c;
+  --color-border: rgba(243, 242, 239, 0.08);
+  --color-border-strong: rgba(243, 242, 239, 0.20);
+
+  --color-accent: #8ab4ff;
+  --color-accent-strong: #a6c6ff;
+  --color-accent-soft: rgba(138, 180, 255, 0.12);
+  --color-accent-border: rgba(138, 180, 255, 0.38);
+  --color-success: #6dd69c;
+  --color-success-soft: rgba(109, 214, 156, 0.12);
+  --color-danger: #ff8d8d;
+  --color-danger-soft: rgba(255, 141, 141, 0.12);
+  --color-danger-hover: #f76e77;
+  --color-danger-border: rgba(255, 141, 141, 0.40);
+  --color-warning: #f1c071;
+  --color-warning-soft: rgba(241, 192, 113, 0.12);
+  --color-orange: #f4aa7b;
+  --color-orange-soft: rgba(244, 170, 123, 0.12);
+  --color-gray: #a9adb8;
+  --color-gray-soft: rgba(169, 173, 184, 0.14);
+
+  --color-ink: #f0ece6;
+  --color-ink-hover: #ffffff;
+  --color-on-ink: #1b1e25;
+  --color-on-status: #16181d;
+  --color-shimmer: #373d48;
+  --color-pinned-highlight: rgba(138, 180, 255, 0.08);
+  --color-pending-border: #626773;
+  --color-connector: #424752;
+  --color-connector-pass: #45c77a;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.18);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.16), 0 4px 16px rgba(0, 0, 0, 0.16), 0 0 0 1px var(--color-border);
+  --shadow-card-hover: 0 2px 4px rgba(0, 0, 0, 0.20), 0 12px 32px rgba(0, 0, 0, 0.24), 0 0 0 1px var(--color-border-strong);
+  --shadow-modal: 0 24px 80px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--color-border);
+  --shadow-popover: 0 8px 30px rgba(0, 0, 0, 0.36), 0 0 0 1px var(--color-border);
+  --shadow-button: 0 6px 16px rgba(0, 0, 0, 0.30);
+  --backdrop-overlay: rgba(0, 0, 0, 0.60);
 }
 
 /* ===== Reset ===== */
